@@ -2,9 +2,9 @@
   "schema_version": "1.0.0",
   "as_of": "2026-11-10",
   "inputs": {
-    "decisions_index": "78d66c2f2057",
-    "tasks": "ecaedaf27883",
-    "wbs": "ee3783a4ecb1",
+    "decisions_index": "f8ee2fcb4ef4",
+    "tasks": "ffdfb5ecbdd5",
+    "wbs": "3a3c59daa203",
     "plan": "ae191c3abeee"
   },
   "derived": {
@@ -22,14 +22,21 @@
           "title": "予約者の連絡先を、いつまで保存するか",
           "wbs": "2.1",
           "due": "2026-11-20",
-          "overdue": false
+          "overdue": false,
+          "tasks": []
         },
         {
           "id": "DR-0007",
           "title": "公開前に、誰が何を確かめれば完成とするか",
           "wbs": "4.1",
           "due": "2026-11-09",
-          "overdue": true
+          "overdue": true,
+          "tasks": [
+            {
+              "id": "T-0007",
+              "status": "doing"
+            }
+          ]
         }
       ],
       "overdue": 1,
@@ -127,9 +134,9 @@
       "complete": 4
     },
     "tasks": {
-      "total": 6,
+      "total": 7,
       "todo": 2,
-      "doing": 1,
+      "doing": 2,
       "done": 2,
       "dropped": 1,
       "active": [
@@ -138,31 +145,31 @@
           "title": "サーバーの月額費用を見積もり、1,000円以内に収まるか確かめる",
           "dr": "DR-0005",
           "status": "doing",
-          "owner": "Claude",
-          "due": "2026-11-12",
-          "overdue": false
+          "ref": ""
         },
         {
           "id": "T-0005",
           "title": "予約の受け付けと定員の確認を実装する",
           "dr": "DR-0005",
           "status": "todo",
-          "owner": "有志A",
-          "due": "2026-11-30",
-          "overdue": false
+          "ref": "Issue 12（例）"
         },
         {
           "id": "T-0006",
           "title": "満席の表示の文言を決める",
           "dr": "DR-0002",
           "status": "todo",
-          "owner": "有志B",
-          "due": "2026-11-08",
-          "overdue": true
+          "ref": "Issue 13（例）"
+        },
+        {
+          "id": "T-0007",
+          "title": "受け入れ基準の案を、有志2名に聞き取る",
+          "dr": "DR-0007",
+          "status": "doing",
+          "ref": ""
         }
       ],
       "stale": [],
-      "overdue": 1,
       "recent_done": [
         {
           "id": "T-0001",
@@ -231,9 +238,9 @@
         "assessed_by": "Claude",
         "assessed_at": "2026-11-10",
         "based_on": {
-          "decisions_index": "78d66c2f2057",
-          "tasks": "ecaedaf27883",
-          "wbs": "ee3783a4ecb1",
+          "decisions_index": "f8ee2fcb4ef4",
+          "tasks": "ffdfb5ecbdd5",
+          "wbs": "3a3c59daa203",
           "plan": "ae191c3abeee"
         },
         "confirmed_by": "オーナー",
@@ -247,9 +254,9 @@
         "assessed_by": "Claude",
         "assessed_at": "2026-11-10",
         "based_on": {
-          "decisions_index": "78d66c2f2057",
-          "tasks": "ecaedaf27883",
-          "wbs": "ee3783a4ecb1",
+          "decisions_index": "f8ee2fcb4ef4",
+          "tasks": "ffdfb5ecbdd5",
+          "wbs": "3a3c59daa203",
           "plan": "ae191c3abeee"
         },
         "confirmed_by": "オーナー",
@@ -258,14 +265,14 @@
     },
     "delivery": {
       "rating": "caution",
-      "text": "受け入れ基準（4.1）が未決で、期限切れの問いが1件あります。実装のタスク（T-0005）の期限は11/30です。",
+      "text": "期限切れの問いが1件あります（受け入れ基準の DR-0007）。T-0007 で案を集めています。公開の期限は12/15です。",
       "meta": {
         "assessed_by": "Claude",
         "assessed_at": "2026-11-10",
         "based_on": {
-          "decisions_index": "78d66c2f2057",
-          "tasks": "ecaedaf27883",
-          "wbs": "ee3783a4ecb1",
+          "decisions_index": "f8ee2fcb4ef4",
+          "tasks": "ffdfb5ecbdd5",
+          "wbs": "3a3c59daa203",
           "plan": "ae191c3abeee"
         },
         "confirmed_by": "",
@@ -279,9 +286,9 @@
         "assessed_by": "Claude",
         "assessed_at": "2026-11-10",
         "based_on": {
-          "decisions_index": "78d66c2f2057",
-          "tasks": "ecaedaf27883",
-          "wbs": "ee3783a4ecb1",
+          "decisions_index": "f8ee2fcb4ef4",
+          "tasks": "ffdfb5ecbdd5",
+          "wbs": "3a3c59daa203",
           "plan": "ae191c3abeee"
         },
         "confirmed_by": "",
@@ -296,9 +303,9 @@
         "assessed_by": "Claude",
         "assessed_at": "2026-11-10",
         "based_on": {
-          "decisions_index": "78d66c2f2057",
-          "tasks": "ecaedaf27883",
-          "wbs": "ee3783a4ecb1",
+          "decisions_index": "f8ee2fcb4ef4",
+          "tasks": "ffdfb5ecbdd5",
+          "wbs": "3a3c59daa203",
           "plan": "ae191c3abeee"
         },
         "confirmed_by": "",

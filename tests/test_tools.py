@@ -93,12 +93,20 @@ class TestValidate(Sandbox):
         self.assertEqual(errors, [])
         self.assertTrue(any("T-0006" in w and "覆された" in w for w in warnings))
 
-    def test_unknown_wbs_and_document(self):
+    def test_unknown_wbs_and_affects(self):
         self.edit("decisions/dr-0006.md", 'wbs: "2.1"', 'wbs: "9.9"')
-        self.edit("decisions/dr-0006.md", "affects: [D02]", "affects: [D99]")
+        self.edit("decisions/dr-0006.md", "affects: [2.1]", "affects: [2.1, 8.8]")
         errors = self.errors()[0]
-        self.assertTrue(any("9.9" in e for e in errors))
-        self.assertTrue(any("D99" in e for e in errors))
+        self.assertTrue(any("wbs 9.9" in e for e in errors))
+        self.assertTrue(any("affects の 8.8" in e for e in errors))
+
+    def test_started_deliverable_needs_file(self):
+        (self.root / "docs" / "design.md").unlink()
+        self.assertTrue(any("docs/design.md がない" in e for e in self.errors()[0]))
+
+    def test_todo_deliverable_may_lack_file(self):
+        self.edit("wbs.csv", "4.1,受け入れ基準,todo,完成の条件,", "4.1,受け入れ基準,todo,完成の条件,docs/acceptance.md")
+        self.assertEqual(self.errors(), ([], []))
 
 
 class TestGate(Sandbox):
@@ -143,7 +151,8 @@ class TestReport(Sandbox):
         self.assertEqual(d["decisions"]["overdue"], 1)
         self.assertEqual((d["ai"]["recommended_decided"], d["ai"]["followed"]), (5, 4))
         self.assertEqual((d["tasks"]["todo"], d["tasks"]["doing"], d["tasks"]["done"], d["tasks"]["dropped"]),
-                         (2, 1, 2, 1))
+                         (2, 2, 2, 1))
+        self.assertNotIn("overdue", d["tasks"])  # 期限はタスクではなく問いに置く
         by_wbs = {x["wbs"]: x for x in d["deliverables"]["items"]}
         self.assertEqual((by_wbs["3.1"]["decided"], by_wbs["3.1"]["total"]), (1, 1))  # 覆された DR-0003 は数えない
         self.assertEqual(by_wbs["5.1"]["pct"], 100)
@@ -154,13 +163,20 @@ class TestReport(Sandbox):
         by_wbs = {x["wbs"]: x for x in report.derive(self.root)["deliverables"]["items"]}
         self.assertIsNone(by_wbs["5.1"]["pct"])
 
+    def test_open_question_lists_its_tasks(self):
+        opened = {o["id"]: o for o in report.derive(self.root)["decisions"]["open_list"]}
+        self.assertEqual(opened["DR-0007"]["tasks"], [{"id": "T-0007", "status": "doing"}])
+        self.assertEqual(opened["DR-0006"]["tasks"], [])
+        html = report.render(self.build()[0])
+        self.assertIn("進めているタスク", html)
+
     def test_wrong_phrase_number_is_rejected(self):
         self.edit("judgments.json", "7件のうち5件が確定", "8件のうち6件が確定")
         self.assertTrue(any("導出値" in e for e in self.build()[1]))
 
     def test_unknown_number_is_rejected(self):
-        self.edit("judgments.json", "期限は11/30です", "期限は11/31です")
-        self.assertTrue(any("31" in e for e in self.build()[1]))
+        self.edit("judgments.json", "期限は12/15です", "期限は12/31です")
+        self.assertTrue(any("数字 31" in e for e in self.build()[1]))
 
     def test_unknown_reference_is_rejected(self):
         self.edit("judgments.json", "DR-0003 の前提", "DR-0099 の前提")
@@ -172,7 +188,7 @@ class TestReport(Sandbox):
 
     def test_changed_input_warns_stale(self):
         with open(self.root / "tasks.csv", "a", encoding="utf-8", newline="") as f:
-            f.write("T-0007,追加のタスク,DR-0005,todo,有志A,,,\r\n")
+            f.write("T-0008,追加のタスク,DR-0005,todo,,,\r\n")
         _, errors, warnings = self.build()
         self.assertEqual(errors, [])
         self.assertTrue(any("tasks" in w for w in warnings))

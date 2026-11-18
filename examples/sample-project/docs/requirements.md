@@ -1,6 +1,6 @@
 ---
-id: D02
 title: 要件
+wbs: [2.1]
 version: 0.2.0
 status: draft
 updated: 2026-11-05

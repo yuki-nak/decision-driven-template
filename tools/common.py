@@ -4,9 +4,8 @@
 
   decisions/dr-NNNN.md   決定記録（1件1ファイル。正本）
   decisions/index.csv    決定記録の一覧（生成物。tools/build_index.py）
-  tasks.csv              決定から派生したタスクと、その実行結果（正本）
-  wbs.csv                成果物WBS（正本）
-  documents.csv          文書IDの一覧（正本）
+  tasks.csv              決定から派生したタスクと、その実行結果（正本）。期限は問い（決定記録の due）に置く
+  wbs.csv                成果物WBS（正本）。決定記録の affects は、この番号で書く
   plan.json              期限、ゲート、壁（QCD）（正本）
   gates/<ゲートID>.md     ゲートのまとめ（下書きは tools/gate.py）
   judgments.json         レポートの判断の欄（LLMが提案し、人間が確認する）
@@ -28,15 +27,13 @@ DECISION_COLUMNS = [
     "decided_by", "recorded_by", "evidence", "supersedes", "affects",
     "ai_recommended", "followed_recommendation", "dialogue_before", "verify_at",
 ]
-TASK_COLUMNS = ["id", "title", "dr", "status", "owner", "due", "result", "result_ref"]
-WBS_COLUMNS = ["wbs", "title", "status", "questions", "file", "doc_id"]
-DOCUMENT_COLUMNS = ["id", "wbs", "title", "file", "state", "replaced_by"]
+TASK_COLUMNS = ["id", "title", "dr", "status", "result", "result_ref", "ref"]
+WBS_COLUMNS = ["wbs", "title", "status", "questions", "file"]
 
 DECISION_STATUS = ("open", "decided", "superseded")
 CATEGORY = ("management", "design", "evaluation")
 TASK_STATUS = ("todo", "doing", "done", "dropped")
 WBS_STATUS = ("confirmed", "partial", "todo", "deferred")
-DOCUMENT_STATE = ("active", "planned", "retired")
 GATE_STATUS = ("未", "通過", "範囲を絞って通過", "通過しない")
 
 # 値の末尾の「  # 注記」を取り除く項目（テンプレートの注記）。題などの文章はそのまま残す
@@ -101,7 +98,12 @@ def read_csv(path, columns):
         missing = [c for c in columns if c not in (reader.fieldnames or [])]
         if missing:
             raise InputError(f"{path}: 列が足りない（{', '.join(missing)}）")
-        return [{k: (v or "").strip() for k, v in r.items()} for r in reader]
+        rows = []
+        for n, r in enumerate(reader, start=2):
+            if None in r:
+                raise InputError(f"{path}: {n}行目の列が多い（見出しは {len(reader.fieldnames)} 列）")
+            rows.append({k: (v or "").strip() for k, v in r.items()})
+        return rows
 
 
 def read_json(path):

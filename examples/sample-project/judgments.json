@@ -6,9 +6,9 @@
       "assessed_by": "Claude",
       "assessed_at": "2026-11-10",
       "based_on": {
-        "decisions_index": "78d66c2f2057",
-        "tasks": "ecaedaf27883",
-        "wbs": "ee3783a4ecb1",
+        "decisions_index": "f8ee2fcb4ef4",
+        "tasks": "ffdfb5ecbdd5",
+        "wbs": "3a3c59daa203",
         "plan": "ae191c3abeee"
       },
       "confirmed_by": "オーナー",
@@ -22,9 +22,9 @@
       "assessed_by": "Claude",
       "assessed_at": "2026-11-10",
       "based_on": {
-        "decisions_index": "78d66c2f2057",
-        "tasks": "ecaedaf27883",
-        "wbs": "ee3783a4ecb1",
+        "decisions_index": "f8ee2fcb4ef4",
+        "tasks": "ffdfb5ecbdd5",
+        "wbs": "3a3c59daa203",
         "plan": "ae191c3abeee"
       },
       "confirmed_by": "オーナー",
@@ -33,14 +33,14 @@
   },
   "delivery": {
     "rating": "caution",
-    "text": "受け入れ基準（4.1）が未決で、期限切れの問いが1件あります。実装のタスク（T-0005）の期限は11/30です。",
+    "text": "期限切れの問いが1件あります（受け入れ基準の DR-0007）。T-0007 で案を集めています。公開の期限は12/15です。",
     "meta": {
       "assessed_by": "Claude",
       "assessed_at": "2026-11-10",
       "based_on": {
-        "decisions_index": "78d66c2f2057",
-        "tasks": "ecaedaf27883",
-        "wbs": "ee3783a4ecb1",
+        "decisions_index": "f8ee2fcb4ef4",
+        "tasks": "ffdfb5ecbdd5",
+        "wbs": "3a3c59daa203",
         "plan": "ae191c3abeee"
       },
       "confirmed_by": "",
@@ -54,9 +54,9 @@
       "assessed_by": "Claude",
       "assessed_at": "2026-11-10",
       "based_on": {
-        "decisions_index": "78d66c2f2057",
-        "tasks": "ecaedaf27883",
-        "wbs": "ee3783a4ecb1",
+        "decisions_index": "f8ee2fcb4ef4",
+        "tasks": "ffdfb5ecbdd5",
+        "wbs": "3a3c59daa203",
         "plan": "ae191c3abeee"
       },
       "confirmed_by": "",
@@ -71,9 +71,9 @@
       "assessed_by": "Claude",
       "assessed_at": "2026-11-10",
       "based_on": {
-        "decisions_index": "78d66c2f2057",
-        "tasks": "ecaedaf27883",
-        "wbs": "ee3783a4ecb1",
+        "decisions_index": "f8ee2fcb4ef4",
+        "tasks": "ffdfb5ecbdd5",
+        "wbs": "3a3c59daa203",
         "plan": "ae191c3abeee"
       },
       "confirmed_by": "",

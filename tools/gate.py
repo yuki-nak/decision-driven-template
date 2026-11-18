@@ -20,6 +20,7 @@ import report
 from common import DECISION_COLUMNS, DEFAULT_ROOT, InputError, WBS_COLUMNS, read_csv
 
 STATUS_LABEL = {"confirmed": "確定", "partial": "一部決定", "todo": "未着手", "deferred": "後回し"}
+TASK_LABEL = {"todo": "未着手", "doing": "作業中", "done": "完了", "dropped": "中止"}
 GATE_DECISION_RE = re.compile(r"^- 判断の決定記録：(DR-\d{4})\s*$", re.M)
 
 
@@ -57,7 +58,7 @@ def render(root, gate_id):
         f"（期限切れ{dec['overdue']}件） |",
         f"| 成果物 | 問いのある{d['deliverables']['with_questions']}件のうち、すべて確定したもの"
         f"{d['deliverables']['complete']}件 |",
-        f"| タスク | 残り{tk['todo'] + tk['doing']}件（期限切れ{tk['overdue']}件）、完了{tk['done']}件、中止{tk['dropped']}件 |",
+        f"| タスク | 残り{tk['todo'] + tk['doing']}件、完了{tk['done']}件、中止{tk['dropped']}件 |",
         f"| AIの推奨の追認 | {ai['recommended_decided']}件のうち{ai['followed']}件 |",
         "",
         "## 2. 通過の条件",
@@ -87,7 +88,10 @@ def render(root, gate_id):
     if not targets:
         lines.append("| （なし） |  |  |  |")
     lines += ["", "## 4. 未決の問い", ""]
-    lines += [f"- {o['id']} {o['title']}（期限 {o['due'] or 'なし'}）" for o in dec["open_list"]] or ["なし。"]
+    def task_note(o):
+        return "、".join(f"{t['id']} {TASK_LABEL.get(t['status'], t['status'])}" for t in o["tasks"]) or "なし"
+    lines += [f"- {o['id']} {o['title']}（期限 {o['due'] or 'なし'}{'、期限切れ' if o['overdue'] else ''}。"
+              f"進めているタスク：{task_note(o)}）" for o in dec["open_list"]] or ["なし。"]
     lines += [
         "",
         "## 5. 判断",

@@ -11,7 +11,7 @@ decided_by:               # 決めた人の役割。人間だけが決める
 recorded_by:              # 記録した人の役割、またはAIエージェントの名前
 evidence:                 # 承認の根拠の場所（対話の日付、PR、議事録）。記録した人と決めた人が違うときは必須
 supersedes:               # この記録が覆す前の記録のID
-affects: []               # 影響する文書のID（D01 など。documents.csv）
+affects: []               # 影響する成果物のWBS番号（1.1 など。wbs.csv）
 ai_recommended: none      # AIが推奨した選択肢（A、B など）。なければ none
 followed_recommendation:  # 決定のときに書く。推奨どおりなら true
 dialogue_before:          # 決める前に、AIとの対話で疑問を確かめたか（true / false）

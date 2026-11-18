@@ -1,4 +1,4 @@
-"""決定記録、タスク、成果物WBS、文書IDが、互いに矛盾なくつながっているかを確かめる。
+"""決定記録、タスク、成果物WBS、ゲートが、互いに矛盾なくつながっているかを確かめる。
 
 使い方:
   python3 tools/validate.py                          # project/ を確かめる
@@ -13,12 +13,11 @@
              記録した人が決定した人と違うときは evidence（承認の根拠）があること、
              AIの推奨があるとき followed_recommendation があること、
              supersedes の参照先が存在し、superseded になっていること、
-             wbs が wbs.csv に、affects が documents.csv にあること
+             wbs と affects（影響する成果物）が wbs.csv にあること
   タスク     IDの形式と重複、status の値、dr が決定記録にあること、
              done のとき result と result_ref、dropped のとき result（理由）があること、
              （警告）覆された決定（superseded）に、終わっていないタスクが残っていること
-  WBS        番号の重複、status の値、doc_id が documents.csv にあること
-  文書ID     IDの重複、state の値、active のファイルが存在すること
+  WBS        番号の重複、status の値、confirmed・partial の成果物の file が存在すること
   ゲート     IDの重複、status の値、status が「未」でなければ、gates/<ID>.md があり、
              「判断の決定記録：DR-NNNN」の行が、確定した決定記録を指すこと
 """
@@ -27,7 +26,7 @@ import pathlib
 import re
 import sys
 
-from common import (CATEGORY, DECISION_STATUS, DEFAULT_ROOT, DOCUMENT_COLUMNS, DOCUMENT_STATE, GATE_STATUS, InputError,
+from common import (CATEGORY, DECISION_STATUS, DEFAULT_ROOT, GATE_STATUS, InputError,
                     TASK_COLUMNS, TASK_STATUS, WBS_COLUMNS, WBS_STATUS, list_value, load_decision_files,
                     read_csv, read_json)
 
@@ -38,22 +37,10 @@ def validate(root):
     errors, warnings = [], []
     try:
         wbs_rows = read_csv(root / "wbs.csv", WBS_COLUMNS)
-        doc_rows = read_csv(root / "documents.csv", DOCUMENT_COLUMNS)
         task_rows = read_csv(root / "tasks.csv", TASK_COLUMNS)
         plan = read_json(root / "plan.json")
     except InputError as e:
         return [str(e)], []
-
-    # 文書ID
-    docs = {}
-    for r in doc_rows:
-        if r["id"] in docs:
-            errors.append(f"documents.csv: id {r['id']} が重複している")
-        docs[r["id"]] = r
-        if r["state"] not in DOCUMENT_STATE:
-            errors.append(f"documents.csv: {r['id']} の state が違う（{r['state']!r}）")
-        if r["state"] == "active" and r["file"] and not (root / r["file"]).exists():
-            errors.append(f"documents.csv: {r['id']} のファイル {r['file']} がない")
 
     # WBS
     wbs = {}
@@ -63,8 +50,8 @@ def validate(root):
         wbs[r["wbs"]] = r
         if r["status"] not in WBS_STATUS:
             errors.append(f"wbs.csv: {r['wbs']} の status が違う（{r['status']!r}）")
-        if r["doc_id"] and r["doc_id"] not in docs:
-            errors.append(f"wbs.csv: {r['wbs']} の doc_id {r['doc_id']} が documents.csv にない")
+        if r["status"] in ("confirmed", "partial") and r["file"] and not (root / r["file"]).exists():
+            errors.append(f"wbs.csv: {r['wbs']} のファイル {r['file']} がない（確定・一部決定の成果物）")
 
     # 決定記録
     decisions = {}
@@ -102,8 +89,8 @@ def validate(root):
         if fm.get("wbs") and fm["wbs"] not in wbs:
             e(f"wbs {fm['wbs']} が wbs.csv にない")
         for ref in list_value(fm.get("affects", "")):
-            if ref not in docs:
-                e(f"affects の {ref} が documents.csv にない")
+            if ref not in wbs:
+                e(f"affects の {ref} が wbs.csv にない（影響する成果物のWBS番号で書く）")
 
     for rid, fm in decisions.items():
         sup = fm.get("supersedes", "")

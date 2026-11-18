@@ -59,8 +59,10 @@ def derive(root):
     by_id = {d["id"]: d for d in decisions}
 
     count = {s: sum(1 for d in decisions if d["status"] == s) for s in ("decided", "open", "superseded")}
+    # 期限は問いに置く。未決の問いごとに、それを進めているタスクを添える
     open_list = [{"id": d["id"], "title": d["title"], "wbs": d["wbs"], "due": d["due"],
-                  "overdue": bool(d["due"] and as_of and d["due"] < as_of)}
+                  "overdue": bool(d["due"] and as_of and d["due"] < as_of),
+                  "tasks": [{"id": t["id"], "status": t["status"]} for t in tasks if t["dr"] == d["id"]]}
                  for d in decisions if d["status"] == "open"]
     rec = [d for d in decisions if d["status"] in ("decided", "superseded")
            and d["ai_recommended"] not in ("", "none")]
@@ -77,9 +79,7 @@ def derive(root):
     with_q = [x for x in deliverables if x["total"]]
 
     task_count = {s: sum(1 for t in tasks if t["status"] == s) for s in TASK_STATUS}
-    active = [{"id": t["id"], "title": t["title"], "dr": t["dr"], "status": t["status"],
-               "owner": t["owner"], "due": t["due"],
-               "overdue": bool(t["due"] and as_of and t["due"] < as_of)}
+    active = [{"id": t["id"], "title": t["title"], "dr": t["dr"], "status": t["status"], "ref": t["ref"]}
               for t in tasks if t["status"] in ("todo", "doing")]
     stale = [t["id"] for t in tasks if t["status"] in ("todo", "doing")
              and by_id.get(t["dr"], {}).get("status") == "superseded"]
@@ -102,7 +102,7 @@ def derive(root):
         "deliverables": {"items": deliverables, "with_questions": len(with_q),
                          "complete": sum(1 for x in with_q if x["decided"] == x["total"])},
         "tasks": {"total": len(tasks), **task_count, "active": active, "stale": stale,
-                  "overdue": sum(1 for t in active if t["overdue"]), "recent_done": recent_done[-10:]},
+                  "recent_done": recent_done[-10:]},
         "plan": {"completion": plan.get("completion", {}),
                  "gates": [{**g, "summary": f"gates/{g.get('id')}.md" if (root / "gates" / f"{g.get('id')}.md").exists() else ""}
                            for g in plan.get("gates", [])],
@@ -148,7 +148,6 @@ def phrase_rules(derived):
         (r"未決の問いが(\d+)件", (dec["open"],)),
         (r"期限切れの問いが(\d+)件", (dec["overdue"],)),
         (r"残りのタスクが(\d+)件", (tk["todo"] + tk["doing"],)),
-        (r"期限切れのタスクが(\d+)件", (tk["overdue"],)),
     ]
 
 
@@ -312,20 +311,24 @@ def render(report):
                f'（覆されたものを除く）。問いのない成果物は計算しない。</p><table><tr><th>WBS</th><th>成果物</th>'
                f'<th>状態</th><th>確定 / 問い</th><th></th></tr>{rows}</table></div>')
 
+    def task_list(ts):
+        return "<br>".join(f'<span class="id">{esc(t["id"])}</span> {esc(STATUS_LABEL.get(t["status"], t["status"]))}'
+                           for t in ts) or '<span class="muted">なし</span>'
     rows = "".join(f'<tr><td class="id">{esc(o["id"])}</td><td>{esc(o["title"])}</td><td class="id">{esc(o["wbs"])}</td>'
-                   f'<td class="num{" bad" if o["overdue"] else ""}">{esc(o["due"] or "—")}</td></tr>'
-                   for o in dec["open_list"]) or '<tr><td colspan="4" class="muted">未決の問いはない。</td></tr>'
-    out.append(f'<div class="card"><h2>未決の問い</h2><table><tr><th>ID</th><th>問い</th><th>WBS</th>'
-               f'<th>期限</th></tr>{rows}</table></div>')
+                   f'<td class="num{" bad" if o["overdue"] else ""}">{esc(o["due"] or "—")}</td>'
+                   f'<td>{task_list(o["tasks"])}</td></tr>'
+                   for o in dec["open_list"]) or '<tr><td colspan="5" class="muted">未決の問いはない。</td></tr>'
+    out.append(f'<div class="card"><h2>未決の問い</h2><p class="muted">期限は問いに置く。タスクの担当や期限は、外部のタスク管理で扱う。'
+               f'</p><table><tr><th>ID</th><th>問い</th><th>WBS</th><th>期限</th><th>進めているタスク</th></tr>{rows}</table></div>')
 
     stale = set(tk["stale"])
     rows = "".join(f'<tr><td class="id">{esc(t["id"])}</td><td>{esc(t["title"])}'
                    f'{"<br><span class=bad>元の決定が覆された。中止か付け替えが要る</span>" if t["id"] in stale else ""}</td>'
                    f'<td class="id">{esc(t["dr"])}</td><td>{esc(STATUS_LABEL.get(t["status"], t["status"]))}</td>'
-                   f'<td>{esc(t["owner"])}</td><td class="num{" bad" if t["overdue"] else ""}">{esc(t["due"] or "—")}</td></tr>'
-                   for t in tk["active"]) or '<tr><td colspan="6" class="muted">残りのタスクはない。</td></tr>'
+                   f'<td>{esc(t["ref"] or "—")}</td></tr>'
+                   for t in tk["active"]) or '<tr><td colspan="5" class="muted">残りのタスクはない。</td></tr>'
     out.append(f'<div class="card"><h2>決定から派生したタスク</h2><table><tr><th>ID</th><th>タスク</th><th>元の決定</th>'
-               f'<th>状態</th><th>担当</th><th>期限</th></tr>{rows}</table></div>')
+               f'<th>状態</th><th>外部の場所</th></tr>{rows}</table></div>')
 
     if tk["recent_done"]:
         rows = "".join(f'<tr><td class="id">{esc(t["id"])}</td><td>{esc(t["title"])}</td><td class="id">{esc(t["dr"])}</td>'

@@ -1,7 +1,7 @@
-﻿wbs,title,status,questions,file,doc_id
-1.1,目的と範囲,confirmed,何のために、どこまで作るか,docs/scope.md,D01
-1.2,成功基準,confirmed,何をもって成功とするか,docs/scope.md,D01
-2.1,要件,partial,予約の流れ、満席、個人情報,docs/requirements.md,D02
-3.1,設計,partial,構成と費用,docs/design.md,D03
-4.1,受け入れ基準,todo,完成の条件,,
-5.1,進め方,deferred,ゲートの見直し,,
+﻿wbs,title,status,questions,file
+1.1,目的と範囲,confirmed,何のために、どこまで作るか,docs/scope.md
+1.2,成功基準,confirmed,何をもって成功とするか,docs/scope.md
+2.1,要件,partial,予約の流れ、満席、個人情報,docs/requirements.md
+3.1,設計,partial,構成と費用,docs/design.md
+4.1,受け入れ基準,todo,完成の条件,
+5.1,進め方,deferred,ゲートの見直し,

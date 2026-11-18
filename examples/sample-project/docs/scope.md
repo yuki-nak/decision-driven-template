@@ -1,6 +1,6 @@
 ---
-id: D01
 title: 目的・範囲と成功基準
+wbs: [1.1, 1.2]
 version: 1.0.0
 status: agreed
 updated: 2026-11-02
