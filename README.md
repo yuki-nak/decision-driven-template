@@ -1,0 +1,55 @@
+# decision-driven-template
+
+LLMと一緒に、**意思決定を中心に**プロジェクトを進めるためのテンプレート。
+
+- **対話で決める**：AIが選択肢・反論・推奨を出し、人間が決める。誰が決め、誰が記録し、AIの推奨に従ったかを残す。
+- **いつでもレポートを出せる**：数字は記録から決まった計算で出し、LLMには判断の欄（要約、QCDの評価、リスク）だけを書かせる。LLMが書いた数字は、導出値と照合して検査する。
+- **決定・タスク・結果がつながる**：タスクは必ず元の決定を指し、終わったら結果とその場所を残す。決定が覆されれば、残っているタスクが警告として見える。
+
+記録はMarkdownとCSVとJSONだけで、特定のツールに依存しない。道具はPythonの標準ライブラリだけで動く。
+
+## 状態
+
+v0（試作）。ゲートの運用と、Copilot Studio での手順は、まだ実際には確かめていない（`docs/guide.md`、`adapters/copilot-studio/`）。
+
+## 始め方
+
+1. このリポジトリを写す（GitHub の「Use this template」、または複製）。
+2. `project/plan.json` に、プロジェクトの名前、完成の期限と範囲、壁（品質・納期・費用）を書く。
+3. `project/wbs.csv` を、自分のプロジェクトの成果物に直す。
+4. 最初の問いを、`project/decisions/_template.md` を写して起票する。
+5. 道具を回す：
+
+```bash
+python3 tools/build_index.py
+```
+
+```bash
+python3 tools/validate.py
+```
+
+```bash
+python3 tools/report.py
+```
+
+`project/report/report.html` を開くと、現在地が見える。
+
+まず `examples/sample-project/`（架空の例）を見ると、決定 → タスク → 結果 → 決定の見直し、の流れが分かる。
+
+## 構成
+
+```
+AGENTS.md              エージェント共通の規約
+CLAUDE.md              Claude Code 用の差分
+adapters/copilot-studio/  Copilot Studio と Microsoft 365 で回す手順（案）
+docs/guide.md          進め方（記録の形、サイクル、ゲート）
+project/               あなたのプロジェクト（空で始まる）
+examples/sample-project/  架空の例
+tools/                 索引・検証・レポートの道具
+tests/                 道具のテスト
+.github/workflows/     CI（記録の整合、生成物の一致、テスト）
+```
+
+## ライセンス
+
+未定。決まるまでは著作権を留保する。

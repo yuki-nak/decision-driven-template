@@ -1,0 +1,4 @@
+﻿id,wbs,title,file,state,replaced_by
+D01,1.1 1.2,目的・範囲と成功基準,docs/scope.md,active,
+D02,2.1,要件,docs/requirements.md,active,
+D03,3.1,設計,docs/design.md,planned,

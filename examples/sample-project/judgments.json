@@ -1,0 +1,83 @@
+{
+  "summary": {
+    "rating": "caution",
+    "text": "決定は**6件のうち4件が確定**しています。DR-0003 の前提がタスクの結果（T-0002）で崩れ、DR-0005 で方式を見直しました。受け入れ基準の問い（DR-0007）は期限を過ぎていて、11/12のG1の前に決める必要があります。",
+    "meta": {
+      "assessed_by": "Claude",
+      "assessed_at": "2026-11-10",
+      "based_on": {
+        "decisions_index": "62d363e42739",
+        "tasks": "ecaedaf27883",
+        "wbs": "ee3783a4ecb1",
+        "plan": "7d66999490f1"
+      },
+      "confirmed_by": "オーナー",
+      "confirmed_at": "2026-11-10"
+    }
+  },
+  "quality": {
+    "rating": "ok",
+    "text": "方式の見直し（DR-0005）で、品質の壁（予約が定員を超えない）を守れる見込みです。",
+    "meta": {
+      "assessed_by": "Claude",
+      "assessed_at": "2026-11-10",
+      "based_on": {
+        "decisions_index": "62d363e42739",
+        "tasks": "ecaedaf27883",
+        "wbs": "ee3783a4ecb1",
+        "plan": "7d66999490f1"
+      },
+      "confirmed_by": "オーナー",
+      "confirmed_at": "2026-11-10"
+    }
+  },
+  "delivery": {
+    "rating": "caution",
+    "text": "受け入れ基準（4.1）が未決で、期限切れの問いが1件あります。実装のタスク（T-0005）の期限は11/30です。",
+    "meta": {
+      "assessed_by": "Claude",
+      "assessed_at": "2026-11-10",
+      "based_on": {
+        "decisions_index": "62d363e42739",
+        "tasks": "ecaedaf27883",
+        "wbs": "ee3783a4ecb1",
+        "plan": "7d66999490f1"
+      },
+      "confirmed_by": "",
+      "confirmed_at": ""
+    }
+  },
+  "cost": {
+    "rating": "caution",
+    "text": "月1,000円以内の壁に収まるかは、T-0004 で確かめている途中です。",
+    "meta": {
+      "assessed_by": "Claude",
+      "assessed_at": "2026-11-10",
+      "based_on": {
+        "decisions_index": "62d363e42739",
+        "tasks": "ecaedaf27883",
+        "wbs": "ee3783a4ecb1",
+        "plan": "7d66999490f1"
+      },
+      "confirmed_by": "",
+      "confirmed_at": ""
+    }
+  },
+  "risks": {
+    "items": [
+      "連絡先の保存期間（DR-0006）が決まらないと、予約の画面の入力項目が確定しない。"
+    ],
+    "meta": {
+      "assessed_by": "Claude",
+      "assessed_at": "2026-11-10",
+      "based_on": {
+        "decisions_index": "62d363e42739",
+        "tasks": "ecaedaf27883",
+        "wbs": "ee3783a4ecb1",
+        "plan": "7d66999490f1"
+      },
+      "confirmed_by": "",
+      "confirmed_at": ""
+    }
+  }
+}

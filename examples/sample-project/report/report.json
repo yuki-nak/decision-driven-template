@@ -1,0 +1,293 @@
+{
+  "schema_version": "1.0.0",
+  "as_of": "2026-11-10",
+  "inputs": {
+    "decisions_index": "62d363e42739",
+    "tasks": "ecaedaf27883",
+    "wbs": "ee3783a4ecb1",
+    "plan": "7d66999490f1"
+  },
+  "derived": {
+    "as_of": "2026-11-10",
+    "project": "商店街イベント予約サイト（架空の例）",
+    "decisions": {
+      "total": 7,
+      "decided": 4,
+      "open": 2,
+      "superseded": 1,
+      "decided_pct": 67,
+      "open_list": [
+        {
+          "id": "DR-0006",
+          "title": "予約者の連絡先を、いつまで保存するか",
+          "wbs": "2.1",
+          "due": "2026-11-20",
+          "overdue": false
+        },
+        {
+          "id": "DR-0007",
+          "title": "公開前に、誰が何を確かめれば完成とするか",
+          "wbs": "4.1",
+          "due": "2026-11-09",
+          "overdue": true
+        }
+      ],
+      "overdue": 1,
+      "recent": [
+        {
+          "id": "DR-0005",
+          "title": "予約の受け付けを、小さなサーバーで自前で作る",
+          "decided_at": "2026-11-06",
+          "decided_by": "オーナー"
+        },
+        {
+          "id": "DR-0004",
+          "title": "成功の基準を、年末のイベントの予約の半分以上がWebから入ることとする",
+          "decided_at": "2026-11-02",
+          "decided_by": "オーナー"
+        },
+        {
+          "id": "DR-0002",
+          "title": "定員に達したら満席と表示し、キャンセル待ちは受け付けない",
+          "decided_at": "2026-11-02",
+          "decided_by": "オーナー"
+        },
+        {
+          "id": "DR-0001",
+          "title": "最初の公開は、イベントの予約受け付けと満席表示までとし、決済は扱わない",
+          "decided_at": "2026-11-02",
+          "decided_by": "オーナー"
+        }
+      ]
+    },
+    "ai": {
+      "recommended_decided": 4,
+      "followed": 3,
+      "not_followed": 1,
+      "followed_pct": 75
+    },
+    "deliverables": {
+      "items": [
+        {
+          "wbs": "1.1",
+          "title": "目的と範囲",
+          "status": "confirmed",
+          "decided": 1,
+          "total": 1,
+          "pct": 100
+        },
+        {
+          "wbs": "1.2",
+          "title": "成功基準",
+          "status": "confirmed",
+          "decided": 1,
+          "total": 1,
+          "pct": 100
+        },
+        {
+          "wbs": "2.1",
+          "title": "要件",
+          "status": "partial",
+          "decided": 1,
+          "total": 2,
+          "pct": 50
+        },
+        {
+          "wbs": "3.1",
+          "title": "設計",
+          "status": "partial",
+          "decided": 1,
+          "total": 1,
+          "pct": 100
+        },
+        {
+          "wbs": "4.1",
+          "title": "受け入れ基準",
+          "status": "todo",
+          "decided": 0,
+          "total": 1,
+          "pct": 0
+        },
+        {
+          "wbs": "5.1",
+          "title": "進め方",
+          "status": "deferred",
+          "decided": 0,
+          "total": 0,
+          "pct": null
+        }
+      ],
+      "with_questions": 5,
+      "complete": 3
+    },
+    "tasks": {
+      "total": 6,
+      "todo": 2,
+      "doing": 1,
+      "done": 2,
+      "dropped": 1,
+      "active": [
+        {
+          "id": "T-0004",
+          "title": "サーバーの月額費用を見積もり、1,000円以内に収まるか確かめる",
+          "dr": "DR-0005",
+          "status": "doing",
+          "owner": "Claude",
+          "due": "2026-11-12",
+          "overdue": false
+        },
+        {
+          "id": "T-0005",
+          "title": "予約の受け付けと定員の確認を実装する",
+          "dr": "DR-0005",
+          "status": "todo",
+          "owner": "有志A",
+          "due": "2026-11-30",
+          "overdue": false
+        },
+        {
+          "id": "T-0006",
+          "title": "満席の表示の文言を決める",
+          "dr": "DR-0002",
+          "status": "todo",
+          "owner": "有志B",
+          "due": "2026-11-08",
+          "overdue": true
+        }
+      ],
+      "stale": [],
+      "overdue": 1,
+      "recent_done": [
+        {
+          "id": "T-0001",
+          "title": "イベント一覧と予約の画面の下書きを作る",
+          "dr": "DR-0001",
+          "result": "2画面の下書き。オーナーの確認済み",
+          "result_ref": "docs/requirements.md 2章"
+        },
+        {
+          "id": "T-0002",
+          "title": "フォームサービスで、定員の上限を守れるかを試す",
+          "dr": "DR-0003",
+          "result": "上限を設定できず、同時の申し込みで定員を超えた。DR-0005 で方式を見直した",
+          "result_ref": "sessions/2026-11-06_方式の見直し.md"
+        }
+      ]
+    },
+    "plan": {
+      "completion": {
+        "date": "2026-12-15",
+        "scope": "予約の受け付けと満席表示まで",
+        "source": "DR-0001"
+      },
+      "gates": [
+        {
+          "id": "G1",
+          "name": "仕様ゲート",
+          "date": "2026-11-12",
+          "condition": "1.1・1.2・2.1 の問いが確定している",
+          "status": "未"
+        },
+        {
+          "id": "G2",
+          "name": "公開ゲート",
+          "date": "2026-12-15",
+          "condition": "受け入れ基準（4.1）を満たす",
+          "status": "未"
+        }
+      ],
+      "walls": {
+        "quality": "予約が定員を超えない",
+        "delivery": "2026-12-15に公開",
+        "cost": "サーバー費用は月1,000円以内"
+      },
+      "capacity": {
+        "weekly_hours": 6,
+        "note": "有志2名の合計（架空）"
+      }
+    }
+  },
+  "judgments": {
+    "summary": {
+      "rating": "caution",
+      "text": "決定は**6件のうち4件が確定**しています。DR-0003 の前提がタスクの結果（T-0002）で崩れ、DR-0005 で方式を見直しました。受け入れ基準の問い（DR-0007）は期限を過ぎていて、11/12のG1の前に決める必要があります。",
+      "meta": {
+        "assessed_by": "Claude",
+        "assessed_at": "2026-11-10",
+        "based_on": {
+          "decisions_index": "62d363e42739",
+          "tasks": "ecaedaf27883",
+          "wbs": "ee3783a4ecb1",
+          "plan": "7d66999490f1"
+        },
+        "confirmed_by": "オーナー",
+        "confirmed_at": "2026-11-10"
+      }
+    },
+    "quality": {
+      "rating": "ok",
+      "text": "方式の見直し（DR-0005）で、品質の壁（予約が定員を超えない）を守れる見込みです。",
+      "meta": {
+        "assessed_by": "Claude",
+        "assessed_at": "2026-11-10",
+        "based_on": {
+          "decisions_index": "62d363e42739",
+          "tasks": "ecaedaf27883",
+          "wbs": "ee3783a4ecb1",
+          "plan": "7d66999490f1"
+        },
+        "confirmed_by": "オーナー",
+        "confirmed_at": "2026-11-10"
+      }
+    },
+    "delivery": {
+      "rating": "caution",
+      "text": "受け入れ基準（4.1）が未決で、期限切れの問いが1件あります。実装のタスク（T-0005）の期限は11/30です。",
+      "meta": {
+        "assessed_by": "Claude",
+        "assessed_at": "2026-11-10",
+        "based_on": {
+          "decisions_index": "62d363e42739",
+          "tasks": "ecaedaf27883",
+          "wbs": "ee3783a4ecb1",
+          "plan": "7d66999490f1"
+        },
+        "confirmed_by": "",
+        "confirmed_at": ""
+      }
+    },
+    "cost": {
+      "rating": "caution",
+      "text": "月1,000円以内の壁に収まるかは、T-0004 で確かめている途中です。",
+      "meta": {
+        "assessed_by": "Claude",
+        "assessed_at": "2026-11-10",
+        "based_on": {
+          "decisions_index": "62d363e42739",
+          "tasks": "ecaedaf27883",
+          "wbs": "ee3783a4ecb1",
+          "plan": "7d66999490f1"
+        },
+        "confirmed_by": "",
+        "confirmed_at": ""
+      }
+    },
+    "risks": {
+      "items": [
+        "連絡先の保存期間（DR-0006）が決まらないと、予約の画面の入力項目が確定しない。"
+      ],
+      "meta": {
+        "assessed_by": "Claude",
+        "assessed_at": "2026-11-10",
+        "based_on": {
+          "decisions_index": "62d363e42739",
+          "tasks": "ecaedaf27883",
+          "wbs": "ee3783a4ecb1",
+          "plan": "7d66999490f1"
+        },
+        "confirmed_by": "",
+        "confirmed_at": ""
+      }
+    }
+  }
+}

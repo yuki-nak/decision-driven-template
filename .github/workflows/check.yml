@@ -1,0 +1,31 @@
+name: check
+
+# 決定記録・タスク・WBS・レポートが、互いに矛盾していないかを確かめる。
+# 生成物（index.csv、report.json、report.html）は、手で直さず、道具で作り直してコミットする。
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: project/
+        run: |
+          python3 tools/build_index.py --root project --check
+          python3 tools/validate.py --root project
+          python3 tools/report.py --root project --check
+      - name: examples/sample-project/
+        run: |
+          python3 tools/build_index.py --root examples/sample-project --check
+          python3 tools/validate.py --root examples/sample-project --strict
+          python3 tools/report.py --root examples/sample-project --check
+      - name: tests
+        run: python3 -m unittest discover -s tests -v

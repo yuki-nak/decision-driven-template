@@ -1,0 +1,8 @@
+﻿id,title,wbs,category,status,owner,due,decided_at,decided_by,recorded_by,evidence,supersedes,affects,ai_recommended,followed_recommendation,dialogue_before,verify_at,file
+DR-0001,最初の公開は、イベントの予約受け付けと満席表示までとし、決済は扱わない,1.1,management,decided,オーナー,2026-11-03,2026-11-02,オーナー,Claude,sessions/2026-11-02_キックオフ.md（オーナーの回答）,,D01,B,true,true,G2,dr-0001.md
+DR-0002,定員に達したら満席と表示し、キャンセル待ちは受け付けない,2.1,design,decided,オーナー,,2026-11-02,オーナー,Claude,sessions/2026-11-02_キックオフ.md（オーナーの回答）,,D02,A,false,true,,dr-0002.md
+DR-0003,サイトは静的なページと、外部のフォームサービスで作る,3.1,design,superseded,オーナー,,2026-11-02,オーナー,Claude,sessions/2026-11-02_キックオフ.md（オーナーの回答）,,D03,A,true,false,2026-11-06,dr-0003.md
+DR-0004,成功の基準を、年末のイベントの予約の半分以上がWebから入ることとする,1.2,evaluation,decided,オーナー,,2026-11-02,オーナー,オーナー,,,D01,none,,false,2026-12-31,dr-0004.md
+DR-0005,予約の受け付けを、小さなサーバーで自前で作る,3.1,design,decided,オーナー,,2026-11-06,オーナー,Claude,sessions/2026-11-06_方式の見直し.md（オーナーの回答）,DR-0003,D03,B,true,true,G2,dr-0005.md
+DR-0006,予約者の連絡先を、いつまで保存するか,2.1,management,open,オーナー,2026-11-20,,,Claude,,,D02,A,,,,dr-0006.md
+DR-0007,公開前に、誰が何を確かめれば完成とするか,4.1,management,open,オーナー,2026-11-09,,,Claude,,,,none,,,,dr-0007.md

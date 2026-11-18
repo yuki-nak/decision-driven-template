@@ -1,0 +1,113 @@
+{
+  "schema_version": "1.0.0",
+  "as_of": "",
+  "inputs": {
+    "decisions_index": "fee829513508",
+    "tasks": "e6f23b1ce60c",
+    "wbs": "56952ceb7732",
+    "plan": "b0c15cf5823f"
+  },
+  "derived": {
+    "as_of": "",
+    "project": "",
+    "decisions": {
+      "total": 0,
+      "decided": 0,
+      "open": 0,
+      "superseded": 0,
+      "decided_pct": null,
+      "open_list": [],
+      "overdue": 0,
+      "recent": []
+    },
+    "ai": {
+      "recommended_decided": 0,
+      "followed": 0,
+      "not_followed": 0,
+      "followed_pct": null
+    },
+    "deliverables": {
+      "items": [
+        {
+          "wbs": "1.1",
+          "title": "目的と範囲",
+          "status": "todo",
+          "decided": 0,
+          "total": 0,
+          "pct": null
+        },
+        {
+          "wbs": "1.2",
+          "title": "成功基準",
+          "status": "todo",
+          "decided": 0,
+          "total": 0,
+          "pct": null
+        },
+        {
+          "wbs": "2.1",
+          "title": "要件",
+          "status": "todo",
+          "decided": 0,
+          "total": 0,
+          "pct": null
+        },
+        {
+          "wbs": "3.1",
+          "title": "設計",
+          "status": "todo",
+          "decided": 0,
+          "total": 0,
+          "pct": null
+        },
+        {
+          "wbs": "4.1",
+          "title": "受け入れ基準",
+          "status": "todo",
+          "decided": 0,
+          "total": 0,
+          "pct": null
+        },
+        {
+          "wbs": "5.1",
+          "title": "進め方",
+          "status": "todo",
+          "decided": 0,
+          "total": 0,
+          "pct": null
+        }
+      ],
+      "with_questions": 0,
+      "complete": 0
+    },
+    "tasks": {
+      "total": 0,
+      "todo": 0,
+      "doing": 0,
+      "done": 0,
+      "dropped": 0,
+      "active": [],
+      "stale": [],
+      "overdue": 0,
+      "recent_done": []
+    },
+    "plan": {
+      "completion": {
+        "date": "",
+        "scope": "",
+        "source": ""
+      },
+      "gates": [],
+      "walls": {
+        "quality": "",
+        "delivery": "",
+        "cost": ""
+      },
+      "capacity": {
+        "weekly_hours": null,
+        "note": ""
+      }
+    }
+  },
+  "judgments": {}
+}
