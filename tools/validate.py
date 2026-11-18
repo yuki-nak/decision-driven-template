@@ -19,13 +19,15 @@
              （警告）覆された決定（superseded）に、終わっていないタスクが残っていること
   WBS        番号の重複、status の値、doc_id が documents.csv にあること
   文書ID     IDの重複、state の値、active のファイルが存在すること
+  ゲート     IDの重複、status の値、status が「未」でなければ、gates/<ID>.md があり、
+             「判断の決定記録：DR-NNNN」の行が、確定した決定記録を指すこと
 """
 import argparse
 import pathlib
 import re
 import sys
 
-from common import (CATEGORY, DECISION_STATUS, DEFAULT_ROOT, DOCUMENT_COLUMNS, DOCUMENT_STATE, InputError,
+from common import (CATEGORY, DECISION_STATUS, DEFAULT_ROOT, DOCUMENT_COLUMNS, DOCUMENT_STATE, GATE_STATUS, InputError,
                     TASK_COLUMNS, TASK_STATUS, WBS_COLUMNS, WBS_STATUS, list_value, load_decision_files,
                     read_csv, read_json)
 
@@ -38,7 +40,7 @@ def validate(root):
         wbs_rows = read_csv(root / "wbs.csv", WBS_COLUMNS)
         doc_rows = read_csv(root / "documents.csv", DOCUMENT_COLUMNS)
         task_rows = read_csv(root / "tasks.csv", TASK_COLUMNS)
-        read_json(root / "plan.json")
+        plan = read_json(root / "plan.json")
     except InputError as e:
         return [str(e)], []
 
@@ -138,6 +140,32 @@ def validate(root):
             errors.append(f"tasks.csv: {tid} は done なのに、result（結果）か result_ref（結果の場所）がない")
         if r["status"] == "dropped" and not r["result"]:
             errors.append(f"tasks.csv: {tid} は dropped なのに、result（やめた理由）がない")
+
+    # ゲート
+    gate_ids = set()
+    for g in plan.get("gates", []):
+        gid, status = g.get("id", ""), g.get("status", "未")
+        if gid in gate_ids:
+            errors.append(f"plan.json: ゲート {gid} が重複している")
+        gate_ids.add(gid)
+        if status not in GATE_STATUS:
+            errors.append(f"plan.json: ゲート {gid} の status が違う（{status!r}。{' / '.join(GATE_STATUS)}）")
+        if status == "未":
+            continue
+        summary = root / "gates" / f"{gid}.md"
+        if not summary.exists():
+            errors.append(f"plan.json: ゲート {gid} は「{status}」なのに、まとめ gates/{gid}.md がない"
+                          f"（python3 tools/gate.py --gate {gid} で下書きを作る）")
+            continue
+        m = re.search(r"^- 判断の決定記録：(DR-\d{4})\s*$", summary.read_text(encoding="utf-8"), re.M)
+        if not m:
+            errors.append(f"gates/{gid}.md: 「- 判断の決定記録：DR-NNNN」の行がない")
+        elif decisions.get(m.group(1), {}).get("status") != "decided":
+            errors.append(f"gates/{gid}.md: 判断の決定記録 {m.group(1)} が、確定した決定記録にない")
+    for fm in decisions.values():
+        v = fm.get("verify_at", "")
+        if v and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v not in gate_ids:
+            errors.append(f"{fm.get('id')}: verify_at の {v} が、日付でも plan.json のゲートでもない")
 
     return errors, warnings
 

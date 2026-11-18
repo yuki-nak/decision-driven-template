@@ -103,7 +103,9 @@ def derive(root):
                          "complete": sum(1 for x in with_q if x["decided"] == x["total"])},
         "tasks": {"total": len(tasks), **task_count, "active": active, "stale": stale,
                   "overdue": sum(1 for t in active if t["overdue"]), "recent_done": recent_done[-10:]},
-        "plan": {"completion": plan.get("completion", {}), "gates": plan.get("gates", []),
+        "plan": {"completion": plan.get("completion", {}),
+                 "gates": [{**g, "summary": f"gates/{g.get('id')}.md" if (root / "gates" / f"{g.get('id')}.md").exists() else ""}
+                           for g in plan.get("gates", [])],
                  "walls": plan.get("walls", {}), "capacity": plan.get("capacity", {})},
     }
 
@@ -179,6 +181,8 @@ def check_judgments(j, derived, current_ids, known_ids):
                 if got != expected:
                     want = "、".join(str(x) for x in expected)
                     errors.append(f"{where}: 「{m.group(0)}」の数字は導出値（{want}）と違う")
+        for pattern, _ in phrase_rules(derived):  # 言い回しで照合した数字は、下の検査に回さない
+            plain = re.sub(pattern, "", plain)
         cleaned = re.sub(r"\b[A-Z]{1,3}\d+\b", "", ID_RE.sub("", plain))
         for m in re.findall(r"\d+(?:\.\d+)?", cleaned):
             n = str(int(float(m))) if float(m).is_integer() else m
@@ -290,9 +294,9 @@ def render(report):
     if plan["gates"]:
         rows = "".join(f'<tr><td class="id">{esc(g.get("id"))}</td><td>{esc(g.get("name"))}</td>'
                        f'<td class="num">{esc(g.get("date"))}</td><td>{esc(g.get("condition"))}</td>'
-                       f'<td>{esc(g.get("status", ""))}</td></tr>' for g in plan["gates"])
+                       f'<td>{esc(g.get("status", ""))}</td><td>{esc(g.get("summary") or "—")}</td></tr>' for g in plan["gates"])
         out.append(f'<div class="card"><h2>ゲート</h2><table><tr><th>ID</th><th>名前</th><th>日付</th>'
-                   f'<th>通過の条件</th><th>状態</th></tr>{rows}</table></div>')
+                   f'<th>通過の条件</th><th>状態</th><th>まとめ</th></tr>{rows}</table></div>')
 
     walls = plan["walls"]
     qcd = "".join(f'<tr><th style="width:5em">{label}</th><td><div class="muted">壁：{esc(walls.get(key, "未定"))}</div>'

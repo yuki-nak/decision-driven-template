@@ -8,6 +8,7 @@
   wbs.csv                成果物WBS（正本）
   documents.csv          文書IDの一覧（正本）
   plan.json              期限、ゲート、壁（QCD）（正本）
+  gates/<ゲートID>.md     ゲートのまとめ（下書きは tools/gate.py）
   judgments.json         レポートの判断の欄（LLMが提案し、人間が確認する）
   report/report.json     レポートのデータ（生成物。tools/report.py）
   report/report.html     レポートの表示（生成物。tools/report.py）
@@ -36,6 +37,7 @@ CATEGORY = ("management", "design", "evaluation")
 TASK_STATUS = ("todo", "doing", "done", "dropped")
 WBS_STATUS = ("confirmed", "partial", "todo", "deferred")
 DOCUMENT_STATE = ("active", "planned", "retired")
+GATE_STATUS = ("未", "通過", "範囲を絞って通過", "通過しない")
 
 # 値の末尾の「  # 注記」を取り除く項目（テンプレートの注記）。題などの文章はそのまま残す
 _COMMENT_OK = set(DECISION_COLUMNS) - {"title"}

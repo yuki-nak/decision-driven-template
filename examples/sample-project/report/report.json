@@ -2,20 +2,20 @@
   "schema_version": "1.0.0",
   "as_of": "2026-11-10",
   "inputs": {
-    "decisions_index": "62d363e42739",
+    "decisions_index": "78d66c2f2057",
     "tasks": "ecaedaf27883",
     "wbs": "ee3783a4ecb1",
-    "plan": "7d66999490f1"
+    "plan": "ae191c3abeee"
   },
   "derived": {
     "as_of": "2026-11-10",
     "project": "商店街イベント予約サイト（架空の例）",
     "decisions": {
-      "total": 7,
-      "decided": 4,
+      "total": 8,
+      "decided": 5,
       "open": 2,
       "superseded": 1,
-      "decided_pct": 67,
+      "decided_pct": 71,
       "open_list": [
         {
           "id": "DR-0006",
@@ -34,6 +34,12 @@
       ],
       "overdue": 1,
       "recent": [
+        {
+          "id": "DR-0008",
+          "title": "G1（範囲ゲート）を通過とする",
+          "decided_at": "2026-11-10",
+          "decided_by": "オーナー"
+        },
         {
           "id": "DR-0005",
           "title": "予約の受け付けを、小さなサーバーで自前で作る",
@@ -61,10 +67,10 @@
       ]
     },
     "ai": {
-      "recommended_decided": 4,
-      "followed": 3,
+      "recommended_decided": 5,
+      "followed": 4,
       "not_followed": 1,
-      "followed_pct": 75
+      "followed_pct": 80
     },
     "deliverables": {
       "items": [
@@ -112,13 +118,13 @@
           "wbs": "5.1",
           "title": "進め方",
           "status": "deferred",
-          "decided": 0,
-          "total": 0,
-          "pct": null
+          "decided": 1,
+          "total": 1,
+          "pct": 100
         }
       ],
-      "with_questions": 5,
-      "complete": 3
+      "with_questions": 6,
+      "complete": 4
     },
     "tasks": {
       "total": 6,
@@ -183,17 +189,27 @@
       "gates": [
         {
           "id": "G1",
-          "name": "仕様ゲート",
-          "date": "2026-11-12",
-          "condition": "1.1・1.2・2.1 の問いが確定している",
-          "status": "未"
+          "name": "範囲ゲート",
+          "date": "2026-11-10",
+          "condition": "1.1・1.2 の問いが確定している",
+          "status": "通過",
+          "summary": "gates/G1.md"
         },
         {
           "id": "G2",
+          "name": "仕様ゲート",
+          "date": "2026-11-12",
+          "condition": "2.1・3.1 の問いが確定している",
+          "status": "未",
+          "summary": ""
+        },
+        {
+          "id": "G3",
           "name": "公開ゲート",
           "date": "2026-12-15",
           "condition": "受け入れ基準（4.1）を満たす",
-          "status": "未"
+          "status": "未",
+          "summary": ""
         }
       ],
       "walls": {
@@ -210,15 +226,15 @@
   "judgments": {
     "summary": {
       "rating": "caution",
-      "text": "決定は**6件のうち4件が確定**しています。DR-0003 の前提がタスクの結果（T-0002）で崩れ、DR-0005 で方式を見直しました。受け入れ基準の問い（DR-0007）は期限を過ぎていて、11/12のG1の前に決める必要があります。",
+      "text": "決定は**7件のうち5件が確定**しています。G1（範囲ゲート）は通過しました（DR-0008）。DR-0003 の前提がタスクの結果（T-0002）で崩れ、DR-0005 で方式を見直しました。受け入れ基準の問い（DR-0007）は期限を過ぎていて、11/12のG2までに選択肢を整理する必要があります。",
       "meta": {
         "assessed_by": "Claude",
         "assessed_at": "2026-11-10",
         "based_on": {
-          "decisions_index": "62d363e42739",
+          "decisions_index": "78d66c2f2057",
           "tasks": "ecaedaf27883",
           "wbs": "ee3783a4ecb1",
-          "plan": "7d66999490f1"
+          "plan": "ae191c3abeee"
         },
         "confirmed_by": "オーナー",
         "confirmed_at": "2026-11-10"
@@ -231,10 +247,10 @@
         "assessed_by": "Claude",
         "assessed_at": "2026-11-10",
         "based_on": {
-          "decisions_index": "62d363e42739",
+          "decisions_index": "78d66c2f2057",
           "tasks": "ecaedaf27883",
           "wbs": "ee3783a4ecb1",
-          "plan": "7d66999490f1"
+          "plan": "ae191c3abeee"
         },
         "confirmed_by": "オーナー",
         "confirmed_at": "2026-11-10"
@@ -247,10 +263,10 @@
         "assessed_by": "Claude",
         "assessed_at": "2026-11-10",
         "based_on": {
-          "decisions_index": "62d363e42739",
+          "decisions_index": "78d66c2f2057",
           "tasks": "ecaedaf27883",
           "wbs": "ee3783a4ecb1",
-          "plan": "7d66999490f1"
+          "plan": "ae191c3abeee"
         },
         "confirmed_by": "",
         "confirmed_at": ""
@@ -263,10 +279,10 @@
         "assessed_by": "Claude",
         "assessed_at": "2026-11-10",
         "based_on": {
-          "decisions_index": "62d363e42739",
+          "decisions_index": "78d66c2f2057",
           "tasks": "ecaedaf27883",
           "wbs": "ee3783a4ecb1",
-          "plan": "7d66999490f1"
+          "plan": "ae191c3abeee"
         },
         "confirmed_by": "",
         "confirmed_at": ""
@@ -280,10 +296,10 @@
         "assessed_by": "Claude",
         "assessed_at": "2026-11-10",
         "based_on": {
-          "decisions_index": "62d363e42739",
+          "decisions_index": "78d66c2f2057",
           "tasks": "ecaedaf27883",
           "wbs": "ee3783a4ecb1",
-          "plan": "7d66999490f1"
+          "plan": "ae191c3abeee"
         },
         "confirmed_by": "",
         "confirmed_at": ""

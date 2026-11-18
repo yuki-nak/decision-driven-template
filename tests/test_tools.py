@@ -10,6 +10,7 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "tools"))
 
 import build_index  # noqa: E402
+import gate  # noqa: E402
 import report  # noqa: E402
 import validate  # noqa: E402
 from common import frontmatter  # noqa: E402
@@ -100,23 +101,61 @@ class TestValidate(Sandbox):
         self.assertTrue(any("D99" in e for e in errors))
 
 
+class TestGate(Sandbox):
+    def test_passed_gate_needs_summary(self):
+        (self.root / "gates" / "G1.md").unlink()
+        self.assertTrue(any("gates/G1.md がない" in e for e in self.errors()[0]))
+
+    def test_passed_gate_needs_decided_record(self):
+        self.edit("gates/G1.md", "判断の決定記録：DR-0008", "判断の決定記録：DR-0006")
+        self.assertTrue(any("DR-0006" in e for e in self.errors()[0]))
+
+    def test_unknown_gate_status(self):
+        self.edit("plan.json", '"status": "通過"', '"status": "たぶん通過"')
+        self.assertTrue(any("status が違う" in e for e in self.errors()[0]))
+
+    def test_verify_at_must_be_date_or_gate(self):
+        self.edit("decisions/dr-0002.md", "verify_at: G1", "verify_at: G9")
+        self.assertTrue(any("G9" in e for e in self.errors()[0]))
+
+    def test_draft_has_snapshot_and_targets(self):
+        text = gate.render(self.root, "G2")
+        self.assertIn("7件のうち5件が確定", text)
+        self.assertIn("| 2.1 | 要件 |", text)
+        self.assertIn("（確定したら DR-NNNN を書く）", text)
+        g1 = gate.render(self.root, "G1")
+        self.assertIn("| DR-0002 |", g1)  # verify_at: G1 の決定と、その期待
+        self.assertIn("満席の表示だけで", g1)
+
+    def test_draft_does_not_overwrite(self):
+        self.assertEqual(gate.main(["--root", str(self.root), "--gate", "G1"]), 1)
+        self.assertEqual(gate.main(["--root", str(self.root), "--gate", "G2"]), 0)
+        self.assertTrue((self.root / "gates" / "G2.md").exists())
+
+
 class TestReport(Sandbox):
     def build(self):
         return report.build(self.root)
 
     def test_derived_counts(self):
         d = report.derive(self.root)
-        self.assertEqual((d["decisions"]["decided"], d["decisions"]["open"], d["decisions"]["superseded"]), (4, 2, 1))
+        self.assertEqual((d["decisions"]["decided"], d["decisions"]["open"], d["decisions"]["superseded"]), (5, 2, 1))
         self.assertEqual(d["decisions"]["overdue"], 1)
-        self.assertEqual((d["ai"]["recommended_decided"], d["ai"]["followed"]), (4, 3))
+        self.assertEqual((d["ai"]["recommended_decided"], d["ai"]["followed"]), (5, 4))
         self.assertEqual((d["tasks"]["todo"], d["tasks"]["doing"], d["tasks"]["done"], d["tasks"]["dropped"]),
                          (2, 1, 2, 1))
         by_wbs = {x["wbs"]: x for x in d["deliverables"]["items"]}
         self.assertEqual((by_wbs["3.1"]["decided"], by_wbs["3.1"]["total"]), (1, 1))  # 覆された DR-0003 は数えない
+        self.assertEqual(by_wbs["5.1"]["pct"], 100)
+
+    def test_deliverable_without_questions_is_not_computed(self):
+        self.edit("decisions/dr-0008.md", 'wbs: "5.1"', 'wbs: "4.1"')
+        build_index.main(["--root", str(self.root)])
+        by_wbs = {x["wbs"]: x for x in report.derive(self.root)["deliverables"]["items"]}
         self.assertIsNone(by_wbs["5.1"]["pct"])
 
     def test_wrong_phrase_number_is_rejected(self):
-        self.edit("judgments.json", "6件のうち4件が確定", "7件のうち5件が確定")
+        self.edit("judgments.json", "7件のうち5件が確定", "8件のうち6件が確定")
         self.assertTrue(any("導出値" in e for e in self.build()[1]))
 
     def test_unknown_number_is_rejected(self):
