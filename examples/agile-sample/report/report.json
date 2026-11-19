@@ -5,7 +5,8 @@
     "decisions_index": "e95c1cfb2d02",
     "tasks": "9b471336004d",
     "wbs": "ce9d08013cda",
-    "plan": "1a2d8dcb723c"
+    "plan": "1244ab8d45d9",
+    "costs": "2c9a89d774ba"
   },
   "derived": {
     "as_of": "2026-11-19",
@@ -191,6 +192,30 @@
         "note": "有志2名の合計（架空）"
       }
     },
+    "costs": {
+      "recorded": true,
+      "limit": {
+        "per": "total",
+        "amount": 0,
+        "kind": ""
+      },
+      "total": 0,
+      "by_kind": {
+        "capex": 0,
+        "opex": 0
+      },
+      "by_month": [
+        {
+          "month": "2026-11",
+          "total": 0
+        }
+      ],
+      "latest_month": "2026-11",
+      "latest_month_total": 0,
+      "used_pct": null,
+      "over": false,
+      "over_months": []
+    },
     "sprints": {
       "current": "S2",
       "items": [
@@ -287,7 +312,8 @@
           "decisions_index": "e95c1cfb2d02",
           "tasks": "9b471336004d",
           "wbs": "ce9d08013cda",
-          "plan": "1a2d8dcb723c"
+          "plan": "1244ab8d45d9",
+          "costs": "2c9a89d774ba"
         },
         "confirmed_by": "オーナー",
         "confirmed_at": "2026-11-19"
@@ -303,7 +329,8 @@
           "decisions_index": "e95c1cfb2d02",
           "tasks": "9b471336004d",
           "wbs": "ce9d08013cda",
-          "plan": "1a2d8dcb723c"
+          "plan": "1244ab8d45d9",
+          "costs": "2c9a89d774ba"
         },
         "confirmed_by": "オーナー",
         "confirmed_at": "2026-11-19"
@@ -319,7 +346,8 @@
           "decisions_index": "e95c1cfb2d02",
           "tasks": "9b471336004d",
           "wbs": "ce9d08013cda",
-          "plan": "1a2d8dcb723c"
+          "plan": "1244ab8d45d9",
+          "costs": "2c9a89d774ba"
         },
         "confirmed_by": "",
         "confirmed_at": ""
@@ -327,7 +355,7 @@
     },
     "cost": {
       "rating": "ok",
-      "text": "追加の費用なしの壁に収まっています。小さなDBは、追加の費用が要らないものを選びました（DR-0005）。",
+      "text": "11月の費用の実績は0円で、追加の費用なしの壁に収まっています。小さなDB（DR-0005）は、無料の範囲で使っています。",
       "meta": {
         "assessed_by": "Claude",
         "assessed_at": "2026-11-19",
@@ -335,7 +363,8 @@
           "decisions_index": "e95c1cfb2d02",
           "tasks": "9b471336004d",
           "wbs": "ce9d08013cda",
-          "plan": "1a2d8dcb723c"
+          "plan": "1244ab8d45d9",
+          "costs": "2c9a89d774ba"
         },
         "confirmed_by": "",
         "confirmed_at": ""
@@ -353,7 +382,8 @@
           "decisions_index": "e95c1cfb2d02",
           "tasks": "9b471336004d",
           "wbs": "ce9d08013cda",
-          "plan": "1a2d8dcb723c"
+          "plan": "1244ab8d45d9",
+          "costs": "2c9a89d774ba"
         },
         "confirmed_by": "",
         "confirmed_at": ""

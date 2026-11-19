@@ -38,6 +38,12 @@
 - テスト：`python3 -m unittest discover -s tests`。
 - CI（`.github/workflows/check.yml`）が、生成物が入力と一致するかと、検証とテストを確かめる。
 
+## 費用
+
+- 実際に支払った金額だけを扱う。工数は書かない。明細は外部の仕組み（会計、経費精算）に任せ、`costs.csv` には月ごとの合計と、その出どころ（`ref`）だけを写す。
+- 各行に `kind`（`capex`：一度きりの支出、`opex`：継続する支出）を書く。どちらか迷うときは、外部の仕組み（会計）の区分に合わせる。
+- 上限は `plan.json` の `cost_limit`（`per`：`month` か `total`、`amount`、任意で `kind`）。壁の文章（`walls.cost`）と食い違わせない。
+
 ## スプリント
 
 - `plan.json` に `sprints` があれば、スプリントで回す（なければ使わない）。手順は `docs/guide.md` の「スプリント」。
@@ -52,6 +58,7 @@
 1. `python3 tools/report.py --derive` の出力と `project/plan.json` を読む。
 2. `judgments.json` を、例（`examples/sample-project/judgments.json`）と同じ形で書く。`rating` は `ok` / `caution` / `bad`。要約は400字、品質・納期・費用は200字、リスクは1項目120字まで。
 3. 数字は、導出値と計画の値だけを使う。計算し直さない。件数は、次の言い回しで書く（道具が導出値と照合する）：「N件のうちM件が確定」「未決の問いがN件」「期限切れの問いがN件」「残りのタスクがN件」。
+   費用は、`costs.csv` と `cost_limit` からの導出値だけで評価する。記録か上限がなければ `caution` にし、未記録であることを書く（`ok` は道具が通さない）。見込みや試算を評価の根拠にするときは、それを確かめるタスクを起こす。
 4. `meta` の `assessed_by` に自分の名前、`assessed_at` に日付、`based_on` に `python3 tools/report.py --print-inputs` の出力を書く。`confirmed_by` と `confirmed_at` は空にする。確認は人間が行う。
 5. `python3 tools/report.py` が検査に通ることを確かめる。
 

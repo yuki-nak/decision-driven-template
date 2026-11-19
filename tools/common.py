@@ -6,7 +6,8 @@
   decisions/index.csv    決定記録の一覧（生成物。tools/build_index.py）
   tasks.csv              決定から派生したタスクと、その実行結果（正本）。期限は問い（決定記録の due）に置く
   wbs.csv                成果物WBS（正本）。決定記録の affects は、この番号で書く
-  plan.json              期限、ゲート、スプリント、壁（QCD）（正本）
+  plan.json              期限、ゲート、スプリント、壁（QCD）、費用の上限（正本）
+  costs.csv              費用の実績。外部の仕組み（会計、経費精算）の月ごとの合計を写す（正本。任意）
   gates/<ゲートID>.md     ゲートのまとめ（下書きは tools/gate.py）
   judgments.json         レポートの判断の欄（LLMが提案し、人間が確認する）
   report/report.json     レポートのデータ（生成物。tools/report.py）
@@ -29,6 +30,9 @@ DECISION_COLUMNS = [
 ]
 TASK_COLUMNS = ["id", "title", "dr", "status", "result", "result_ref", "ref"]
 TASK_OPTIONAL = ["sprint"]  # なくても読める列。スプリントを使うときに足す
+COST_COLUMNS = ["month", "item", "kind", "amount", "ref"]
+COST_PER = ("month", "total")  # 費用の上限の単位：月額 ／ 総額
+COST_KIND = ("capex", "opex")  # 設備投資（一度きりの支出） ／ 運用費（継続する支出）
 WBS_COLUMNS = ["wbs", "title", "status", "questions", "file"]
 
 DECISION_STATUS = ("open", "decided", "superseded")
@@ -144,3 +148,19 @@ def decision_sprint(d, sprints):
     """決定が属するスプリント。確定・覆されたものは decided_at、未決の問いは due で決まる。"""
     date = d.get("due", "") if d.get("status") == "open" else d.get("decided_at", "")
     return sprint_at(date, sprints)
+
+
+def read_costs(root):
+    """costs.csv の行。ファイルがなければ None（未記録）。"""
+    path = pathlib.Path(root) / "costs.csv"
+    return read_csv(path, COST_COLUMNS) if path.exists() else None
+
+
+def cost_limit(plan):
+    """plan.json の費用の上限。{"per": "month"|"total", "amount": 数, "kind": "capex"|"opex"|""} か、なければ None。
+    kind を書けば、その種類の費用だけを上限と比べる（空ならすべて）。"""
+    lim = plan.get("cost_limit") or {}
+    if lim.get("per") in COST_PER and isinstance(lim.get("amount"), (int, float)) \
+            and not isinstance(lim.get("amount"), bool) and lim.get("kind", "") in COST_KIND + ("",):
+        return {"per": lim["per"], "amount": lim["amount"], "kind": lim.get("kind", "")}
+    return None

@@ -32,6 +32,19 @@ def expectation(root, filename):
     return " ".join(m.group(1).split()) if m else ""
 
 
+def cost_cell(c):
+    lim = c["limit"]
+    kinds = {"capex": "Capex", "opex": "Opex", "": ""}
+    lim_text = "上限は未設定" if not lim else \
+        f"上限は{kinds[lim['kind']] + 'の' if lim['kind'] else ''}{'月' if lim['per'] == 'month' else '総額'}{lim['amount']}"
+    if not c["recorded"]:
+        return f"実績は未記録（costs.csv）。{lim_text}"
+    over = "。上限を超えている" if c["over"] else ""
+    scope = f"{kinds[lim['kind']]}の" if lim and lim["kind"] else ""
+    return (f"{scope}合計{c['total']}、最新の月（{c['latest_month']}）{c['latest_month_total']}"
+            f"（すべての種類：Capex {c['by_kind']['capex']}、Opex {c['by_kind']['opex']}）。{lim_text}{over}")
+
+
 def render(root, gate_id):
     d = report.derive(root)
     gate = next((g for g in d["plan"]["gates"] if g.get("id") == gate_id), None)
@@ -68,6 +81,7 @@ def render(root, gate_id):
         f"{d['deliverables']['complete']}件 |",
         f"| タスク | 残り{tk['todo'] + tk['doing']}件、完了{tk['done']}件、中止{tk['dropped']}件 |",
         f"| AIの推奨の追認 | {ai['recommended_decided']}件のうち{ai['followed']}件 |",
+        f"| 費用 | {cost_cell(d['costs'])} |",
     ]
     if sprint:
         lines += [

@@ -20,6 +20,9 @@
   WBS        番号の重複、status の値、confirmed・partial の成果物の file が存在すること
   ゲート     IDの重複、status の値、status が「未」でなければ、gates/<ID>.md があり、
              「判断の決定記録：DR-NNNN」の行が、確定した決定記録を指すこと
+  費用       costs.csv の month が YYYY-MM、kind が capex / opex、amount が0以上の整数、item があること、
+             同じ月・項目・種類の重複がないこと、
+             plan.json の cost_limit の per が month / total、amount が0以上の数、kind が capex / opex / 空
   スプリント IDの重複とゲートとの重なり、status の値、start・end が日付で start <= end、
              期間がほかのスプリントと重ならないこと、タスクの sprint がスプリントにあること、
              status が「未」でなければ、ゲートと同じく、まとめと判断の決定記録があること
@@ -32,7 +35,7 @@ import sys
 
 from common import (CATEGORY, DECISION_STATUS, DEFAULT_ROOT, GATE_STATUS, SPRINT_STATUS, InputError,
                     TASK_COLUMNS, TASK_STATUS, WBS_COLUMNS, WBS_STATUS, list_value, load_decision_files,
-                    read_csv, read_json, sprints_of)
+                    read_csv, read_json, read_costs, sprints_of)
 
 DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
@@ -110,6 +113,36 @@ def validate(root):
     for rid, fm in decisions.items():
         if fm.get("status") == "superseded" and rid not in superseded_by:
             errors.append(f"{rid}: superseded なのに、覆した決定記録（supersedes: {rid}）がない")
+
+    # 費用（実績は外部の仕組みの月ごとの合計を写す。明細は持たない）
+    try:
+        costs = read_costs(root)
+    except InputError as ex:
+        errors.append(str(ex))
+        costs = None
+    seen_cost = set()
+    for r in costs or []:
+        key = (r["month"], r["item"], r["kind"])
+        if r["kind"] not in ("capex", "opex"):
+            errors.append(f"costs.csv: {r['month']} {r['item']} の kind が capex / opex でない（{r['kind']!r}）")
+        if not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", r["month"]):
+            errors.append(f"costs.csv: month が YYYY-MM でない（{r['month']!r}）")
+        if not r["item"]:
+            errors.append(f"costs.csv: {r['month']} に item（項目）のない行がある")
+        if not re.fullmatch(r"\d+", r["amount"]):
+            errors.append(f"costs.csv: {r['month']} {r['item']} の amount が0以上の整数でない（{r['amount']!r}。桁区切りは書かない）")
+        if key in seen_cost:
+            errors.append(f"costs.csv: {r['month']} {r['item']} が重複している（月ごとの合計を1行で書く）")
+        seen_cost.add(key)
+    lim = plan.get("cost_limit")
+    if lim not in (None, {}) and (lim.get("per") or lim.get("amount") is not None):
+        amount = lim.get("amount")
+        if lim.get("per") not in ("month", "total"):
+            errors.append(f"plan.json: cost_limit の per が month / total でない（{lim.get('per')!r}）")
+        if isinstance(amount, bool) or not isinstance(amount, (int, float)) or amount < 0:
+            errors.append(f"plan.json: cost_limit の amount が0以上の数でない（{amount!r}）")
+        if lim.get("kind", "") not in ("capex", "opex", ""):
+            errors.append(f"plan.json: cost_limit の kind が capex / opex / 空でない（{lim.get('kind')!r}）")
 
     # スプリント（レビューはゲートとして、下でまとめを確かめる）
     sprints = sprints_of(plan)

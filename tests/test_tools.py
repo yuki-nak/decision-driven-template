@@ -329,5 +329,97 @@ class TestNoSprints(Sandbox):
         self.assertEqual(self.errors(), ([], []))
 
 
+class TestCosts(Sandbox):
+    """費用の実績（月ごとの合計）と上限。"""
+
+    def costs(self, *rows, limit=None):
+        (self.root / "costs.csv").write_text("\ufeffmonth,item,kind,amount,ref\r\n" + "".join(
+            ",".join(r) + "\r\n" for r in rows), encoding="utf-8")
+        if limit is not None:
+            p = self.root / "plan.json"
+            data = json.loads(p.read_text(encoding="utf-8"))
+            data["cost_limit"] = limit
+            p.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    def set_cost_rating(self, rating, text=None):
+        p = self.root / "judgments.json"
+        j = json.loads(p.read_text(encoding="utf-8"))
+        j["cost"]["rating"] = rating
+        if text is not None:
+            j["cost"]["text"] = text
+        p.write_text(json.dumps(j, ensure_ascii=False), encoding="utf-8")
+
+    def test_unrecorded(self):
+        c = report.derive(self.root)["costs"]
+        self.assertEqual((c["recorded"], c["limit"], c["total"]), (False, None, 0))
+        self.assertIn("実績：未記録", report.render(report.build(self.root)[0]))
+
+    def test_monthly_limit(self):
+        self.costs(["2026-10", "サーバー", "opex", "800", "請求書"], ["2026-11", "サーバー", "opex", "900", "請求書"],
+                   ["2026-11", "ドメイン", "opex", "300", "請求書"], limit={"per": "month", "amount": 1000})
+        c = report.derive(self.root)["costs"]
+        self.assertEqual((c["total"], c["latest_month"], c["latest_month_total"]), (2000, "2026-11", 1200))
+        self.assertEqual((c["used_pct"], c["over"], c["over_months"]), (120, True, ["2026-11"]))
+
+    def test_total_limit(self):
+        self.costs(["2026-11", "外注", "capex", "50000", "請求書"], limit={"per": "total", "amount": 100000})
+        c = report.derive(self.root)["costs"]
+        self.assertEqual((c["used_pct"], c["over"]), (50, False))
+
+    def test_ok_needs_record_and_limit(self):
+        self.set_cost_rating("ok")
+        self.assertTrue(any("ok にできない" in e for e in report.build(self.root)[1]))
+        self.costs(["2026-11", "サーバー", "opex", "500", "請求書"])
+        self.assertTrue(any("ok にできない" in e for e in report.build(self.root)[1]))  # 上限がない
+        self.costs(["2026-11", "サーバー", "opex", "500", "請求書"], limit={"per": "month", "amount": 1000})
+        self.set_cost_rating("ok", "11月の実績は500円で、上限の50%です。")
+        self.assertEqual(report.build(self.root)[1], [])
+
+    def test_ok_rejected_when_over(self):
+        self.costs(["2026-11", "サーバー", "opex", "1500", "請求書"], limit={"per": "month", "amount": 1000})
+        self.set_cost_rating("ok", "収まっています。")
+        self.assertTrue(any("超えている" in e for e in report.build(self.root)[1]))
+
+    def test_amount_with_separator_is_checked(self):
+        self.costs(["2026-11", "サーバー", "opex", "4200", "請求書"], limit={"per": "month", "amount": 5000})
+        self.set_cost_rating("ok", "11月の実績は4,200円です。")
+        self.assertEqual(report.build(self.root)[1], [])
+        self.set_cost_rating("ok", "11月の実績は4,300円です。")
+        self.assertTrue(any("4300" in e or "4,300" in e for e in report.build(self.root)[1]))
+
+    def test_validate_costs(self):
+        self.costs(["2026-13", "サーバー", "opex", "\"1,000\"", "請求書"], ["2026-13", "サーバー", "opex", "5", "請求書"],
+                   ["2026-11", "機器", "asset", "5", "請求書"],
+                   limit={"per": "week", "amount": -1, "kind": "both"})
+        errors = self.errors()[0]
+        for word in ("YYYY-MM", "整数でない", "重複", "kind が capex / opex でない", "per が month / total でない",
+                     "amount が0以上の数でない", "cost_limit の kind"):
+            self.assertTrue(any(word in e for e in errors), word)
+
+    def test_costs_change_input_ids(self):
+        self.assertNotIn("costs", report.input_ids(self.root))
+        self.costs(["2026-11", "サーバー", "opex", "500", "請求書"])
+        self.assertIn("costs", report.input_ids(self.root))
+
+    def test_capex_and_opex_are_split(self):
+        self.costs(["2026-11", "機器", "capex", "30000", "請求書"], ["2026-11", "サーバー", "opex", "900", "請求書"],
+                   limit={"per": "month", "amount": 1000})
+        c = report.derive(self.root)["costs"]
+        self.assertEqual(c["by_kind"], {"capex": 30000, "opex": 900})
+        self.assertEqual((c["total"], c["over"]), (30900, True))  # kind がなければ、すべてを上限と比べる
+
+    def test_limit_scoped_to_kind(self):
+        self.costs(["2026-11", "機器", "capex", "30000", "請求書"], ["2026-11", "サーバー", "opex", "900", "請求書"],
+                   limit={"per": "month", "amount": 1000, "kind": "opex"})
+        c = report.derive(self.root)["costs"]
+        self.assertEqual((c["total"], c["latest_month_total"], c["used_pct"], c["over"]), (900, 900, 90, False))
+        html = report.render(report.build(self.root)[0])
+        self.assertIn("Opexの合計 900", html)
+        self.assertIn("上限：Opex 月 1,000", html)
+
+    def test_gate_draft_has_cost_row(self):
+        self.assertIn("| 費用 | 実績は未記録（costs.csv）。上限は未設定 |", gate.render(self.root, "G2"))
+
+
 if __name__ == "__main__":
     unittest.main()

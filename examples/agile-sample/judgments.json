@@ -9,7 +9,8 @@
         "decisions_index": "e95c1cfb2d02",
         "tasks": "9b471336004d",
         "wbs": "ce9d08013cda",
-        "plan": "1a2d8dcb723c"
+        "plan": "1244ab8d45d9",
+        "costs": "2c9a89d774ba"
       },
       "confirmed_by": "オーナー",
       "confirmed_at": "2026-11-19"
@@ -25,7 +26,8 @@
         "decisions_index": "e95c1cfb2d02",
         "tasks": "9b471336004d",
         "wbs": "ce9d08013cda",
-        "plan": "1a2d8dcb723c"
+        "plan": "1244ab8d45d9",
+        "costs": "2c9a89d774ba"
       },
       "confirmed_by": "オーナー",
       "confirmed_at": "2026-11-19"
@@ -41,7 +43,8 @@
         "decisions_index": "e95c1cfb2d02",
         "tasks": "9b471336004d",
         "wbs": "ce9d08013cda",
-        "plan": "1a2d8dcb723c"
+        "plan": "1244ab8d45d9",
+        "costs": "2c9a89d774ba"
       },
       "confirmed_by": "",
       "confirmed_at": ""
@@ -49,7 +52,7 @@
   },
   "cost": {
     "rating": "ok",
-    "text": "追加の費用なしの壁に収まっています。小さなDBは、追加の費用が要らないものを選びました（DR-0005）。",
+    "text": "11月の費用の実績は0円で、追加の費用なしの壁に収まっています。小さなDB（DR-0005）は、無料の範囲で使っています。",
     "meta": {
       "assessed_by": "Claude",
       "assessed_at": "2026-11-19",
@@ -57,7 +60,8 @@
         "decisions_index": "e95c1cfb2d02",
         "tasks": "9b471336004d",
         "wbs": "ce9d08013cda",
-        "plan": "1a2d8dcb723c"
+        "plan": "1244ab8d45d9",
+        "costs": "2c9a89d774ba"
       },
       "confirmed_by": "",
       "confirmed_at": ""
@@ -75,7 +79,8 @@
         "decisions_index": "e95c1cfb2d02",
         "tasks": "9b471336004d",
         "wbs": "ce9d08013cda",
-        "plan": "1a2d8dcb723c"
+        "plan": "1244ab8d45d9",
+        "costs": "2c9a89d774ba"
       },
       "confirmed_by": "",
       "confirmed_at": ""
