@@ -1,0 +1,8 @@
+﻿id,title,wbs,category,status,owner,due,decided_at,decided_by,recorded_by,evidence,supersedes,affects,ai_recommended,followed_recommendation,dialogue_before,verify_at,file
+DR-0001,最初のリリースは、貸出と返却の記録と一覧までとし、予約は扱わない,1.1,management,decided,オーナー,2026-11-03,2026-11-02,オーナー,Claude,対話の記録（2026-11-02、架空）,,1.1 2.1,B,true,true,R1,dr-0001.md
+DR-0002,スプリントは2週間とし、最終日のレビューで、ゴールを達成したかを決定記録で確定する,5.1,management,decided,オーナー,2026-11-03,2026-11-02,オーナー,Claude,対話の記録（2026-11-02、架空）,,5.1,none,,true,,dr-0002.md
+DR-0003,貸出は先着順とし、取り置きはしない,2.1,design,decided,オーナー,2026-11-06,2026-11-06,オーナー,Claude,対話の記録（2026-11-06、架空）,,2.1,A,false,true,,dr-0003.md
+DR-0004,S1のレビュー：スプリントゴールを達成した,5.1,evaluation,decided,オーナー,2026-11-13,2026-11-13,オーナー,Claude,sessions/2026-11-13_S1レビュー.md（オーナーの回答）,,5.1,none,,true,,dr-0004.md
+DR-0005,記録の置き場を、表計算から小さなDBに移す,3.1,design,decided,オーナー,2026-11-17,2026-11-17,オーナー,Claude,対話の記録（2026-11-17、架空）,,3.1,A,true,true,S3,dr-0005.md
+DR-0006,延滞を、借りた人にどう知らせるか,2.1,design,open,オーナー,2026-11-25,,,,,,2.1,none,,,,dr-0006.md
+DR-0007,リリースの判定の条件を何にするか,4.1,evaluation,open,オーナー,2026-12-10,,,,,,4.1,none,,,,dr-0007.md

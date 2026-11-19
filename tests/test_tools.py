@@ -16,6 +16,7 @@ import validate  # noqa: E402
 from common import frontmatter  # noqa: E402
 
 SAMPLE = REPO / "examples" / "sample-project"
+AGILE = REPO / "examples" / "agile-sample"
 
 
 class Sandbox(unittest.TestCase):
@@ -43,7 +44,7 @@ class TestCommitted(unittest.TestCase):
     """コミット済みの生成物が、入力と一致する。"""
 
     def test_index_and_report_match(self):
-        for root in (REPO / "project", SAMPLE):
+        for root in (REPO / "project", SAMPLE, AGILE):
             with self.subTest(root=root.name):
                 self.assertEqual(build_index.main(["--root", str(root), "--check"]), 0)
                 self.assertEqual(validate.main(["--root", str(root)]), 0)
@@ -206,6 +207,126 @@ class TestReport(Sandbox):
         b = report.dumps(self.build()[0])
         self.assertEqual(a, b)
         json.loads(a)
+
+
+class AgileSandbox(Sandbox):
+    """アジャイルの例を写して確かめる。"""
+
+    def setUp(self):
+        self.tmp = pathlib.Path(tempfile.mkdtemp())
+        self.root = self.tmp / "p"
+        shutil.copytree(AGILE, self.root)
+
+    def plan(self, **changes):
+        p = self.root / "plan.json"
+        data = json.loads(p.read_text(encoding="utf-8"))
+        for i, sp in changes.get("sprints", {}).items():
+            data["sprints"][i].update(sp)
+        p.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    def reindex(self):
+        build_index.main(["--root", str(self.root)])
+
+
+class TestSprintValidate(AgileSandbox):
+    def test_agile_sample_is_clean(self):
+        self.assertEqual(self.errors(), ([], []))
+
+    def test_reviewed_sprint_needs_summary(self):
+        (self.root / "gates" / "S1.md").rename(self.tmp / "S1.md")
+        self.assertTrue(any("スプリント S1" in e and "まとめ" in e for e in self.errors()[0]))
+
+    def test_unknown_sprint_status(self):
+        self.plan(sprints={1: {"status": "通過"}})
+        self.assertTrue(any("S2 の status" in e for e in self.errors()[0]))
+
+    def test_overlapping_sprints(self):
+        self.plan(sprints={1: {"start": "2026-11-13"}})
+        self.assertTrue(any("重なっている" in e for e in self.errors()[0]))
+
+    def test_start_after_end(self):
+        self.plan(sprints={0: {"start": "2026-11-20"}})
+        self.assertTrue(any("start が end より後" in e for e in self.errors()[0]))
+
+    def test_sprint_id_must_not_collide_with_gate(self):
+        self.plan(sprints={2: {"id": "R1"}})
+        self.assertTrue(any("ゲートのIDと重なっている" in e for e in self.errors()[0]))
+
+    def test_task_sprint_must_exist(self):
+        self.edit("tasks.csv", ",todo,,,,S2", ",todo,,,,S9")
+        self.assertTrue(any("sprint S9" in e for e in self.errors()[0]))
+
+    def test_verify_at_may_be_sprint(self):
+        self.assertFalse(any("verify_at" in e for e in self.errors()[0]))  # DR-0005 は verify_at: S3
+
+
+class TestSprintDerive(AgileSandbox):
+    def test_membership_by_date_and_column(self):
+        sp = report.derive(self.root)["sprints"]
+        self.assertEqual(sp["current"], "S2")
+        by = {s["id"]: s for s in sp["items"]}
+        self.assertEqual((by["S1"]["decided"], by["S1"]["tasks_done"]), (4, 2))
+        self.assertEqual((by["S2"]["decided"], by["S2"]["open"], by["S2"]["tasks_remaining"]), (1, 1, 2))
+        self.assertEqual(by["S3"]["open"], 1)
+        self.assertEqual(sp["unassigned_decisions"], 0)
+
+    def test_open_question_moves_with_due(self):
+        self.edit("decisions/dr-0006.md", "due: 2026-11-25", "due: 2026-12-01")
+        self.reindex()
+        by = {s["id"]: s for s in report.derive(self.root)["sprints"]["items"]}
+        self.assertEqual((by["S2"]["open"], by["S3"]["open"]), (0, 2))
+
+    def test_selected_sprint(self):
+        sp = report.derive(self.root, "S1")["sprints"]
+        self.assertEqual(sp["current"], "S1")
+        self.assertEqual([d["id"] for d in sp["current_detail"]["decided_list"]],
+                         ["DR-0001", "DR-0002", "DR-0003", "DR-0004"])
+
+    def test_unknown_selected_sprint(self):
+        with self.assertRaises(report.InputError):
+            report.derive(self.root, "S9")
+
+    def test_as_of_outside_sprints(self):
+        self.edit("plan.json", '"as_of": "2026-11-19"', '"as_of": "2026-11-28"')
+        r, errors, _ = report.build(self.root)
+        self.assertEqual(r["derived"]["sprints"]["current"], "")
+        self.assertIn("を含むスプリントはない", report.render(r))
+
+    def test_sprint_phrase_is_checked(self):
+        self.edit("judgments.json", "このスプリントで確定した決定が1件", "このスプリントで確定した決定が3件")
+        _, errors, _ = report.build(self.root)
+        self.assertTrue(any("このスプリントで確定した決定が3件" in e for e in errors))
+
+    def test_sprint_open_phrase_does_not_hit_global_rule(self):
+        # 「このスプリントの未決の問いが1件」は、全体の「未決の問いが2件」の規則で照合しない
+        self.assertEqual(report.build(self.root)[1], [])
+
+    def test_sprint_report_has_no_judgments(self):
+        r, errors, _ = report.build(self.root, "S1")
+        self.assertEqual((r["judgments"], errors), ({}, []))
+        self.assertIn("今のスプリント：S1", report.render(r))
+
+    def test_review_draft(self):
+        text = gate.render(self.root, "S2")
+        self.assertIn("# S2 スプリントレビュー（2026-11-27）", text)
+        self.assertIn("スプリントゴール：データの置き場を移し、延滞が分かる", text)
+        self.assertIn("達成 ／ 一部達成 ／ 未達成", text)
+        self.assertIn("このスプリント（2026-11-16〜2026-11-27）", text)
+
+
+class TestNoSprints(Sandbox):
+    """スプリントがなければ、従来どおり。"""
+
+    def test_no_sprints_key(self):
+        self.assertNotIn("sprints", report.derive(self.root))
+        self.assertNotIn("今のスプリント", report.render(report.build(self.root)[0]))
+
+    def test_sprint_option_needs_sprints(self):
+        with self.assertRaises(report.InputError):
+            report.derive(self.root, "S1")
+
+    def test_tasks_without_sprint_column_are_read(self):
+        self.assertEqual(self.errors(), ([], []))
 
 
 if __name__ == "__main__":

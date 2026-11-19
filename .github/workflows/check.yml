@@ -27,5 +27,10 @@ jobs:
           python3 tools/build_index.py --root examples/sample-project --check
           python3 tools/validate.py --root examples/sample-project --strict
           python3 tools/report.py --root examples/sample-project --check
+      - name: examples/agile-sample/
+        run: |
+          python3 tools/build_index.py --root examples/agile-sample --check
+          python3 tools/validate.py --root examples/agile-sample --strict
+          python3 tools/report.py --root examples/agile-sample --check
       - name: tests
         run: python3 -m unittest discover -s tests -v

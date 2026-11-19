@@ -1,0 +1,5 @@
+﻿id,title,dr,status,result,result_ref,ref,sprint
+T-0001,貸出と返却の画面を作る,DR-0001,done,貸出・返却・一覧の3画面ができた,commit 1a2b3c4,,S1
+T-0002,先着順の一覧の表示を作る,DR-0003,done,貸出中の備品と借りた人が一覧に出る,commit 5d6e7f8,,S1
+T-0003,小さなDBに記録を移す試作,DR-0005,doing,,,,S2
+T-0004,延滞の通知の方法を調べる（メール、チャット）,DR-0006,todo,,,,S2

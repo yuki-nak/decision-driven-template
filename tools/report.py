@@ -12,6 +12,12 @@
   python3 tools/report.py --check                    # 書かずに、コミット済みのレポートと一致するかを確かめる
   python3 tools/report.py --derive                   # 導出値だけを表示する（判断の欄を書くLLMに渡す）
   python3 tools/report.py --print-inputs             # 判断の欄の based_on に書く入力の識別子
+  python3 tools/report.py --sprint S1                # スプリント S1 を「今のスプリント」として report/report-S1.* に書く
+                                                     # （判断の欄は今の時点の評価なので載せない）
+
+スプリント（plan.json の sprints）があれば、as_of を含むスプリントを「今のスプリント」とし、
+その節とスプリントの一覧を足す。決定は日付（確定は decided_at、未決は due）で、
+タスクは tasks.csv の sprint 列で、スプリントに属する。sprints がなければ、出力は従来と同じ。
 
 検査（通らなければ書かない。終了コード1）:
   判断の欄の形（評価の値、文字数）、文章中の数字が導出値か計画の値にあること、
@@ -26,7 +32,7 @@ import re
 import sys
 
 from common import (DECISION_COLUMNS, DEFAULT_ROOT, InputError, TASK_COLUMNS, TASK_STATUS, WBS_COLUMNS,
-                    file_id, read_csv, read_json, wbs_key)
+                    decision_sprint, file_id, read_csv, read_json, sprint_at, sprints_of, wbs_key)
 
 SCHEMA_VERSION = "1.0.0"
 INPUTS = {
@@ -50,7 +56,7 @@ def input_ids(root):
     return {k: file_id(root / v) for k, v in INPUTS.items()}
 
 
-def derive(root):
+def derive(root, sprint=None):
     plan = read_json(root / "plan.json")
     as_of = plan.get("as_of", "")
     decisions = read_csv(root / INPUTS["decisions_index"], DECISION_COLUMNS)
@@ -86,7 +92,7 @@ def derive(root):
     recent_done = [{"id": t["id"], "title": t["title"], "dr": t["dr"], "result": t["result"],
              "result_ref": t["result_ref"]} for t in tasks if t["status"] == "done"]
 
-    return {
+    out = {
         "as_of": as_of,
         "project": plan.get("project", ""),
         "decisions": {
@@ -108,6 +114,51 @@ def derive(root):
                            for g in plan.get("gates", [])],
                  "walls": plan.get("walls", {}), "capacity": plan.get("capacity", {})},
     }
+    sprints = sprints_of(plan)
+    if sprints:  # スプリントがなければ、出力は従来と同じ
+        out["sprints"] = derive_sprints(root, sprints, decisions, tasks, as_of, sprint)
+    elif sprint:
+        raise InputError("plan.json にスプリントがない")
+    return out
+
+
+def derive_sprints(root, sprints, decisions, tasks, as_of, selected=None):
+    ids = [s.get("id", "") for s in sprints]
+    if selected and selected not in ids:
+        raise InputError(f"plan.json にスプリント {selected} がない")
+    current = selected or sprint_at(as_of, sprints)
+    of = {d["id"]: decision_sprint(d, sprints) for d in decisions}
+
+    def detail(sid):
+        ds = [d for d in decisions if of[d["id"]] == sid]
+        ts = [t for t in tasks if t.get("sprint", "") == sid]
+        opened = [d for d in ds if d["status"] == "open"]
+        decided = sorted((d for d in ds if d["status"] == "decided"), key=lambda d: (d["decided_at"], d["id"]))
+        return {
+            "decided": len(decided),
+            "open": len(opened),
+            "overdue": sum(1 for d in opened if d["due"] and as_of and d["due"] < as_of),
+            "tasks_remaining": sum(1 for t in ts if t["status"] in ("todo", "doing")),
+            "tasks_done": sum(1 for t in ts if t["status"] == "done"),
+            "decided_list": [{"id": d["id"], "title": d["title"], "decided_at": d["decided_at"],
+                              "decided_by": d["decided_by"]} for d in decided],
+            "open_list": [{"id": d["id"], "title": d["title"], "due": d["due"],
+                           "overdue": bool(d["due"] and as_of and d["due"] < as_of)} for d in opened],
+            "tasks": [{"id": t["id"], "title": t["title"], "dr": t["dr"], "status": t["status"],
+                       "result": t["result"]} for t in ts],
+        }
+
+    items = []
+    for s in sprints:
+        sid = s.get("id", "")
+        det = detail(sid)
+        items.append({"id": sid, "goal": s.get("goal", ""), "start": s.get("start", ""), "end": s.get("end", ""),
+                      "status": s.get("status", "未"),
+                      "summary": f"gates/{sid}.md" if (root / "gates" / f"{sid}.md").exists() else "",
+                      **{k: det[k] for k in ("decided", "open", "overdue", "tasks_remaining", "tasks_done")}})
+    unassigned = sum(1 for d in decisions if not of[d["id"]] and d["status"] != "superseded")
+    return {"current": current, "items": items, "current_detail": detail(current) if current else None,
+            "unassigned_decisions": unassigned}
 
 
 # ---------- 3 判断の欄の検査 ----------
@@ -143,7 +194,15 @@ ID_RE = re.compile(r"\b(?:DR|T)-\d{4}\b")
 def phrase_rules(derived):
     """決まった言い回しと、そこに入るべき導出値。判断の欄はこの言い回しで件数を書く。"""
     dec, tk = derived["decisions"], derived["tasks"]
-    return [
+    rules = []
+    cur = (derived.get("sprints") or {}).get("current_detail")
+    if cur:  # 今のスプリントの言い回しを先に照合する（全体の言い回しと重ならないように）
+        rules += [
+            (r"このスプリントで確定した決定が(\d+)件", (cur["decided"],)),
+            (r"このスプリントの未決の問いが(\d+)件", (cur["open"],)),
+            (r"このスプリントの残りのタスクが(\d+)件", (cur["tasks_remaining"],)),
+        ]
+    return rules + [
         (r"(\d+)件のうち(\d+)件が確定", (dec["decided"] + dec["open"], dec["decided"])),
         (r"未決の問いが(\d+)件", (dec["open"],)),
         (r"期限切れの問いが(\d+)件", (dec["overdue"],)),
@@ -174,13 +233,12 @@ def check_judgments(j, derived, current_ids, known_ids):
             if ref not in ids:
                 errors.append(f"{where}: {ref} が存在しない")
         plain = text.replace("**", "")
-        for pattern, expected in phrase_rules(derived):
+        for pattern, expected in phrase_rules(derived):  # 照合した言い回しは消し、下の検査に回さない
             for m in re.finditer(pattern, plain):
                 got = tuple(int(g) for g in m.groups())
                 if got != expected:
                     want = "、".join(str(x) for x in expected)
                     errors.append(f"{where}: 「{m.group(0)}」の数字は導出値（{want}）と違う")
-        for pattern, _ in phrase_rules(derived):  # 言い回しで照合した数字は、下の検査に回さない
             plain = re.sub(pattern, "", plain)
         cleaned = re.sub(r"\b[A-Z]{1,3}\d+\b", "", ID_RE.sub("", plain))
         for m in re.findall(r"\d+(?:\.\d+)?", cleaned):
@@ -267,6 +325,51 @@ def bar(p):
     return "" if p is None else f'<div class="bar"><i style="width:{p}%"></i></div>'
 
 
+SPRINT_LABEL = {"未": "未", "達成": "達成", "一部達成": "一部達成", "未達成": "未達成"}
+
+
+def sprint_cards(sp, as_of):
+    out = []
+    cur = next((s for s in sp["items"] if s["id"] == sp["current"]), None)
+    c = sp["current_detail"]
+    if cur and c:
+        def tile(value, label):
+            return f'<div class="tile"><b>{esc(value)}</b><span>{esc(label)}</span></div>'
+        decided = "".join(f'<tr><td class="id">{esc(x["id"])}</td><td>{esc(x["title"])}</td>'
+                          f'<td class="num">{esc(x["decided_at"])}</td><td>{esc(x["decided_by"])}</td></tr>'
+                          for x in c["decided_list"]) or '<tr><td colspan="4" class="muted">なし。</td></tr>'
+        opened = "".join(f'<tr><td class="id">{esc(x["id"])}</td><td>{esc(x["title"])}</td>'
+                         f'<td class="num{" bad" if x["overdue"] else ""}">{esc(x["due"])}</td></tr>'
+                         for x in c["open_list"]) or '<tr><td colspan="3" class="muted">なし。</td></tr>'
+        def task_row(t):
+            result = f'<div class="meta">{esc(t["result"])}</div>' if t["result"] else ""
+            return (f'<tr><td class="id">{esc(t["id"])}</td><td>{esc(t["title"])}{result}</td>'
+                    f'<td class="id">{esc(t["dr"])}</td><td>{esc(STATUS_LABEL.get(t["status"], t["status"]))}</td></tr>')
+        tasks = "".join(task_row(t) for t in c["tasks"]) or '<tr><td colspan="4" class="muted">なし。</td></tr>'
+        out.append(
+            f'<div class="card"><h2>今のスプリント：{esc(cur["id"])}（{esc(cur["start"])} 〜 {esc(cur["end"])}）</h2>'
+            f'<p><strong>ゴール：</strong>{esc(cur["goal"])}</p>'
+            f'<div class="tiles">{tile(c["decided"], "このスプリントで確定した決定")}'
+            f'{tile(c["open"], "このスプリントが期限の未決の問い（期限切れ " + str(c["overdue"]) + "）")}'
+            f'{tile(c["tasks_remaining"], "このスプリントの残りのタスク（完了 " + str(c["tasks_done"]) + "）")}</div>'
+            f'<h2>確定した決定</h2><table><tr><th>ID</th><th>結論</th><th>日付</th><th>決定した人</th></tr>{decided}</table>'
+            f'<h2 style="margin-top:16px">未決の問い</h2><table><tr><th>ID</th><th>問い</th><th>期限</th></tr>{opened}</table>'
+            f'<h2 style="margin-top:16px">タスク</h2><table><tr><th>ID</th><th>タスク</th><th>元の決定</th><th>状態</th></tr>{tasks}</table>'
+            f'</div>')
+    else:
+        out.append(f'<div class="card"><h2>今のスプリント</h2><p class="muted">{esc(as_of)} を含むスプリントはない。</p></div>')
+    rows = "".join(f'<tr><td class="id">{"▶ " if s["id"] == sp["current"] else ""}{esc(s["id"])}</td><td>{esc(s["goal"])}</td>'
+                   f'<td class="num">{esc(s["start"])} 〜 {esc(s["end"])}</td><td>{esc(SPRINT_LABEL.get(s["status"], s["status"]))}</td>'
+                   f'<td class="num">{s["decided"]}</td><td class="num">{s["open"]}</td>'
+                   f'<td class="num">{s["tasks_remaining"]} / {s["tasks_done"]}</td><td>{esc(s["summary"] or "—")}</td></tr>'
+                   for s in sp["items"])
+    out.append(f'<div class="card"><h2>スプリント</h2><p class="muted">決定は日付（確定は決めた日、未決は期限）で、'
+               f'タスクは sprint 列でスプリントに属する。レビューはゲートとして扱う。どのスプリントにも属さない決定：'
+               f'{sp["unassigned_decisions"]}件。</p><table><tr><th>ID</th><th>ゴール</th><th>期間</th><th>レビュー</th>'
+               f'<th>確定</th><th>未決</th><th>タスク 残 / 完了</th><th>まとめ</th></tr>{rows}</table></div>')
+    return "\n".join(out)
+
+
 def render(report):
     d, j, cur = report["derived"], report["judgments"], report["inputs"]
     dec, ai, dl, tk, plan = d["decisions"], d["ai"], d["deliverables"], d["tasks"], d["plan"]
@@ -289,6 +392,9 @@ def render(report):
                + tile("—" if ai["followed_pct"] is None else f'{ai["followed_pct"]}%',
                       f'AIの推奨の追認（{ai["followed"]} / {ai["recommended_decided"]}）')
                + '</div>')
+
+    if d.get("sprints"):
+        out.append(sprint_cards(d["sprints"], d["as_of"]))
 
     if plan["gates"]:
         rows = "".join(f'<tr><td class="id">{esc(g.get("id"))}</td><td>{esc(g.get("name"))}</td>'
@@ -356,10 +462,11 @@ def render(report):
 
 # ---------- 実行 ----------
 
-def build(root):
-    derived = derive(root)
+def build(root, sprint=None):
+    derived = derive(root, sprint)
     jpath = root / "judgments.json"
-    judgments = read_json(jpath) if jpath.exists() else {}
+    # --sprint の出力には、判断の欄を載せない（判断の欄は今の時点の評価）
+    judgments = {} if sprint else (read_json(jpath) if jpath.exists() else {})
     current = input_ids(root)
     known = {r["id"] for r in read_csv(root / INPUTS["decisions_index"], DECISION_COLUMNS)}
     known |= {r["id"] for r in read_csv(root / INPUTS["tasks"], TASK_COLUMNS)}
@@ -380,6 +487,7 @@ def main(argv=None):
     g.add_argument("--check", action="store_true")
     g.add_argument("--derive", action="store_true")
     g.add_argument("--print-inputs", action="store_true")
+    ap.add_argument("--sprint", help="このスプリントを今のスプリントとして report/report-<ID>.* に書く")
     args = ap.parse_args(argv)
     root = args.root.resolve()
     try:
@@ -387,9 +495,9 @@ def main(argv=None):
             print(json.dumps(input_ids(root), ensure_ascii=False, indent=2))
             return 0
         if args.derive:
-            print(json.dumps(derive(root), ensure_ascii=False, indent=2))
+            print(json.dumps(derive(root, args.sprint), ensure_ascii=False, indent=2))
             return 0
-        report, errors, warnings = build(root)
+        report, errors, warnings = build(root, args.sprint)
     except InputError as e:
         print("エラー: " + str(e), file=sys.stderr)
         return 1
@@ -401,7 +509,8 @@ def main(argv=None):
         print("検査に通らなかったので、レポートは書かない。", file=sys.stderr)
         return 1
     out_dir = root / "report"
-    files = {"report.json": dumps(report), "report.html": render(report)}
+    stem = f"report-{args.sprint}" if args.sprint else "report"
+    files = {f"{stem}.json": dumps(report), f"{stem}.html": render(report)}
     if args.check:
         bad = [n for n, text in files.items()
                if not (out_dir / n).exists() or (out_dir / n).read_text(encoding="utf-8") != text]
@@ -414,7 +523,7 @@ def main(argv=None):
     out_dir.mkdir(exist_ok=True)
     for n, text in files.items():
         (out_dir / n).write_text(text, encoding="utf-8")
-    print(f"レポートを書いた: {out_dir}/report.json、report.html")
+    print(f"レポートを書いた: {out_dir}/{stem}.json、{stem}.html")
     return 0
 
 

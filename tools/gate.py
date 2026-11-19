@@ -5,6 +5,7 @@
   python3 tools/gate.py --gate G1 --root examples/sample-project
   python3 tools/gate.py --gate G1 --force              # 作り直す（記入済みの内容は消える）
   python3 tools/gate.py --gate G1 --stdout             # ファイルに書かず、標準出力に出す
+  python3 tools/gate.py --gate S1                      # スプリント S1 のレビューのまとめ（レビューはゲートとして扱う）
 
 ゲートの当日に作る。1章（その時点の数字）は導出値から書く（LLMを使わない。手で直さない）。
 2〜5章は、AIが下書きし、人間が確かめて埋める。ゲートの判断そのものは決定記録で確定し、
@@ -34,8 +35,15 @@ def expectation(root, filename):
 def render(root, gate_id):
     d = report.derive(root)
     gate = next((g for g in d["plan"]["gates"] if g.get("id") == gate_id), None)
+    sprint = None
     if gate is None:
-        raise InputError(f"plan.json にゲート {gate_id} がない")
+        sprint = next((s for s in (d.get("sprints") or {}).get("items", []) if s["id"] == gate_id), None)
+        if sprint is None:
+            raise InputError(f"plan.json にゲートもスプリントも {gate_id} がない")
+        # スプリントのレビューをゲートとして扱う。日付は最終日、条件はスプリントゴール
+        gate = {"id": gate_id, "name": "スプリントレビュー", "date": sprint["end"],
+                "condition": f"スプリントゴール：{sprint['goal']}"}
+        sd = report.derive(root, gate_id)["sprints"]["current_detail"]
     wbs = {r["wbs"]: r for r in read_csv(root / "wbs.csv", WBS_COLUMNS)}
     decisions = read_csv(root / "decisions" / "index.csv", DECISION_COLUMNS)
     dec, tk, ai = d["decisions"], d["tasks"], d["ai"]
@@ -60,6 +68,14 @@ def render(root, gate_id):
         f"{d['deliverables']['complete']}件 |",
         f"| タスク | 残り{tk['todo'] + tk['doing']}件、完了{tk['done']}件、中止{tk['dropped']}件 |",
         f"| AIの推奨の追認 | {ai['recommended_decided']}件のうち{ai['followed']}件 |",
+    ]
+    if sprint:
+        lines += [
+            f"| このスプリント（{sprint['start']}〜{sprint['end']}） | 確定した決定{sd['decided']}件、"
+            f"このスプリントが期限の未決の問い{sd['open']}件（期限切れ{sd['overdue']}件）、"
+            f"タスクの残り{sd['tasks_remaining']}件・完了{sd['tasks_done']}件 |",
+        ]
+    lines += [
         "",
         "## 2. 通過の条件",
         "",
@@ -96,7 +112,7 @@ def render(root, gate_id):
         "",
         "## 5. 判断",
         "",
-        "- 結論：通過 ／ 範囲を絞って通過 ／ 通過しない",
+        "- 結論：" + ("達成 ／ 一部達成 ／ 未達成" if sprint else "通過 ／ 範囲を絞って通過 ／ 通過しない"),
         "- 理由：",
         "- 絞った範囲（あれば）：",
         "- 承認者：",
