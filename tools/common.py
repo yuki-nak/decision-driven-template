@@ -6,7 +6,7 @@
   decisions/index.csv    決定記録の一覧（生成物。tools/build_index.py）
   tasks.csv              決定から派生したタスクと、その実行結果（正本）。期限は問い（決定記録の due）に置く
   wbs.csv                成果物WBS（正本）。決定記録の affects は、この番号で書く
-  plan.json              期限、ゲート、壁（QCD）（正本）
+  plan.json              期限、ゲート、スプリント、壁（QCD）（正本）
   gates/<ゲートID>.md     ゲートのまとめ（下書きは tools/gate.py）
   judgments.json         レポートの判断の欄（LLMが提案し、人間が確認する）
   report/report.json     レポートのデータ（生成物。tools/report.py）
@@ -28,6 +28,7 @@ DECISION_COLUMNS = [
     "ai_recommended", "followed_recommendation", "dialogue_before", "verify_at",
 ]
 TASK_COLUMNS = ["id", "title", "dr", "status", "result", "result_ref", "ref"]
+TASK_OPTIONAL = ["sprint"]  # なくても読める列。スプリントを使うときに足す
 WBS_COLUMNS = ["wbs", "title", "status", "questions", "file"]
 
 DECISION_STATUS = ("open", "decided", "superseded")
@@ -35,6 +36,7 @@ CATEGORY = ("management", "design", "evaluation")
 TASK_STATUS = ("todo", "doing", "done", "dropped")
 WBS_STATUS = ("confirmed", "partial", "todo", "deferred")
 GATE_STATUS = ("未", "通過", "範囲を絞って通過", "通過しない")
+SPRINT_STATUS = ("未", "達成", "一部達成", "未達成")
 
 # 値の末尾の「  # 注記」を取り除く項目（テンプレートの注記）。題などの文章はそのまま残す
 _COMMENT_OK = set(DECISION_COLUMNS) - {"title"}
@@ -121,3 +123,24 @@ def file_id(path):
 
 def wbs_key(w):
     return [int(p) if p.isdigit() else p for p in w.split(".")]
+
+
+def sprints_of(plan):
+    """plan.json のスプリントの一覧。なければ空。"""
+    return [s for s in plan.get("sprints") or [] if isinstance(s, dict)]
+
+
+def sprint_at(date, sprints):
+    """日付（YYYY-MM-DD）が期間（両端を含む）に入るスプリントのID。なければ空。"""
+    if not date:
+        return ""
+    for s in sprints:
+        if s.get("start", "") <= date <= s.get("end", "") and s.get("start") and s.get("end"):
+            return s.get("id", "")
+    return ""
+
+
+def decision_sprint(d, sprints):
+    """決定が属するスプリント。確定・覆されたものは decided_at、未決の問いは due で決まる。"""
+    date = d.get("due", "") if d.get("status") == "open" else d.get("decided_at", "")
+    return sprint_at(date, sprints)

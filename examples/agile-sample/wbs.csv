@@ -1,0 +1,6 @@
+﻿wbs,title,status,questions,file
+1.1,目的と範囲,confirmed,何のために、どこまで作るか,docs/scope.md
+2.1,要件,partial,貸出の流れ、予約、延滞,docs/requirements.md
+3.1,設計,partial,データの置き場,docs/design.md
+4.1,リリース判定,todo,リリースの条件,
+5.1,進め方,confirmed,スプリントの長さ、レビュー,docs/scope.md

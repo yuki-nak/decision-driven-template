@@ -4,5 +4,6 @@
   "completion": {"date": "", "scope": "", "source": ""},
   "capacity": {"weekly_hours": null, "note": ""},
   "gates": [],
+  "sprints": [],
   "walls": {"quality": "", "delivery": "", "cost": ""}
 }

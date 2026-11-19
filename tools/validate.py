@@ -20,15 +20,21 @@
   WBS        番号の重複、status の値、confirmed・partial の成果物の file が存在すること
   ゲート     IDの重複、status の値、status が「未」でなければ、gates/<ID>.md があり、
              「判断の決定記録：DR-NNNN」の行が、確定した決定記録を指すこと
+  スプリント IDの重複とゲートとの重なり、status の値、start・end が日付で start <= end、
+             期間がほかのスプリントと重ならないこと、タスクの sprint がスプリントにあること、
+             status が「未」でなければ、ゲートと同じく、まとめと判断の決定記録があること
+             （スプリントのレビューはゲートとして扱う）
 """
 import argparse
 import pathlib
 import re
 import sys
 
-from common import (CATEGORY, DECISION_STATUS, DEFAULT_ROOT, GATE_STATUS, InputError,
+from common import (CATEGORY, DECISION_STATUS, DEFAULT_ROOT, GATE_STATUS, SPRINT_STATUS, InputError,
                     TASK_COLUMNS, TASK_STATUS, WBS_COLUMNS, WBS_STATUS, list_value, load_decision_files,
-                    read_csv, read_json)
+                    read_csv, read_json, sprints_of)
+
+DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 REQUIRED = ("id", "title", "wbs", "category", "status", "owner")
 
@@ -105,6 +111,33 @@ def validate(root):
         if fm.get("status") == "superseded" and rid not in superseded_by:
             errors.append(f"{rid}: superseded なのに、覆した決定記録（supersedes: {rid}）がない")
 
+    # スプリント（レビューはゲートとして、下でまとめを確かめる）
+    sprints = sprints_of(plan)
+    sprint_ids = set()
+    gate_id_set = {g.get("id", "") for g in plan.get("gates", [])}
+    for sp in sprints:
+        sid = sp.get("id", "")
+        if not sid:
+            errors.append("plan.json: id のないスプリントがある")
+        if sid in sprint_ids:
+            errors.append(f"plan.json: スプリント {sid} が重複している")
+        if sid in gate_id_set:
+            errors.append(f"plan.json: スプリント {sid} のIDが、ゲートのIDと重なっている")
+        sprint_ids.add(sid)
+        if sp.get("status", "未") not in SPRINT_STATUS:
+            errors.append(f"plan.json: スプリント {sid} の status が違う（{sp.get('status')!r}。"
+                          f"{' / '.join(SPRINT_STATUS)}）")
+        start, end = sp.get("start", ""), sp.get("end", "")
+        if not (DATE_RE.fullmatch(start) and DATE_RE.fullmatch(end)):
+            errors.append(f"plan.json: スプリント {sid} の start・end が日付（YYYY-MM-DD）でない")
+        elif start > end:
+            errors.append(f"plan.json: スプリント {sid} の start が end より後")
+    dated = sorted((sp["start"], sp["end"], sp.get("id", "")) for sp in sprints
+                   if DATE_RE.fullmatch(sp.get("start", "")) and DATE_RE.fullmatch(sp.get("end", "")))
+    for (s1, e1, a), (s2, e2, b) in zip(dated, dated[1:]):
+        if s2 <= e1:
+            errors.append(f"plan.json: スプリント {a} と {b} の期間が重なっている")
+
     # タスク
     seen = set()
     for r in task_rows:
@@ -127,21 +160,25 @@ def validate(root):
             errors.append(f"tasks.csv: {tid} は done なのに、result（結果）か result_ref（結果の場所）がない")
         if r["status"] == "dropped" and not r["result"]:
             errors.append(f"tasks.csv: {tid} は dropped なのに、result（やめた理由）がない")
+        if r.get("sprint") and r["sprint"] not in sprint_ids:
+            errors.append(f"tasks.csv: {tid} の sprint {r['sprint']} が plan.json のスプリントにない")
 
     # ゲート
     gate_ids = set()
-    for g in plan.get("gates", []):
-        gid, status = g.get("id", ""), g.get("status", "未")
-        if gid in gate_ids:
-            errors.append(f"plan.json: ゲート {gid} が重複している")
+    reviews = [(g.get("id", ""), g.get("status", "未"), "ゲート") for g in plan.get("gates", [])]
+    reviews += [(sp.get("id", ""), sp.get("status", "未"), "スプリント") for sp in sprints]
+    for gid, status, kind in reviews:
+        if kind == "ゲート":
+            if gid in gate_ids:
+                errors.append(f"plan.json: ゲート {gid} が重複している")
+            if status not in GATE_STATUS:
+                errors.append(f"plan.json: ゲート {gid} の status が違う（{status!r}。{' / '.join(GATE_STATUS)}）")
         gate_ids.add(gid)
-        if status not in GATE_STATUS:
-            errors.append(f"plan.json: ゲート {gid} の status が違う（{status!r}。{' / '.join(GATE_STATUS)}）")
-        if status == "未":
+        if status == "未" or (kind == "スプリント" and status not in SPRINT_STATUS):
             continue
         summary = root / "gates" / f"{gid}.md"
         if not summary.exists():
-            errors.append(f"plan.json: ゲート {gid} は「{status}」なのに、まとめ gates/{gid}.md がない"
+            errors.append(f"plan.json: {kind} {gid} は「{status}」なのに、まとめ gates/{gid}.md がない"
                           f"（python3 tools/gate.py --gate {gid} で下書きを作る）")
             continue
         m = re.search(r"^- 判断の決定記録：(DR-\d{4})\s*$", summary.read_text(encoding="utf-8"), re.M)
@@ -152,7 +189,7 @@ def validate(root):
     for fm in decisions.values():
         v = fm.get("verify_at", "")
         if v and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v not in gate_ids:
-            errors.append(f"{fm.get('id')}: verify_at の {v} が、日付でも plan.json のゲートでもない")
+            errors.append(f"{fm.get('id')}: verify_at の {v} が、日付でも plan.json のゲート・スプリントでもない")
 
     return errors, warnings
 

@@ -32,10 +32,18 @@
 | --- | --- |
 | `project/decisions/index.csv` | `python3 tools/build_index.py` |
 | `project/report/report.json`、`report.html` | `python3 tools/report.py` |
+| `project/report/report-<スプリントID>.*` | `python3 tools/report.py --sprint <スプリントID>` |
 
 - 検証：`python3 tools/validate.py`。エラーがない状態でコミットする。
 - テスト：`python3 -m unittest discover -s tests`。
 - CI（`.github/workflows/check.yml`）が、生成物が入力と一致するかと、検証とテストを確かめる。
+
+## スプリント
+
+- `plan.json` に `sprints` があれば、スプリントで回す（なければ使わない）。手順は `docs/guide.md` の「スプリント」。
+- 決定記録にスプリントの項目は書かない。所属は日付（確定は `decided_at`、未決は `due`）から道具が導出する。タスクは `tasks.csv` の `sprint` 列に書く。
+- スプリントの最終日に `python3 tools/gate.py --gate <スプリントID>` でレビューのまとめを作り、達成したかを決定記録で確定してから、`sprints` の `status` を変える。
+- 判断の欄で今のスプリントの件数を書くときは、「このスプリントで確定した決定がN件」「このスプリントの未決の問いがN件」「このスプリントの残りのタスクがN件」の言い回しにする。
 
 ## 判断の欄（judgments.json）の書き方
 

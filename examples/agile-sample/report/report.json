@@ -1,0 +1,363 @@
+{
+  "schema_version": "1.0.0",
+  "as_of": "2026-11-19",
+  "inputs": {
+    "decisions_index": "e95c1cfb2d02",
+    "tasks": "9b471336004d",
+    "wbs": "ce9d08013cda",
+    "plan": "1a2d8dcb723c"
+  },
+  "derived": {
+    "as_of": "2026-11-19",
+    "project": "社内備品の貸出アプリ（架空の例）",
+    "decisions": {
+      "total": 7,
+      "decided": 5,
+      "open": 2,
+      "superseded": 0,
+      "decided_pct": 71,
+      "open_list": [
+        {
+          "id": "DR-0006",
+          "title": "延滞を、借りた人にどう知らせるか",
+          "wbs": "2.1",
+          "due": "2026-11-25",
+          "overdue": false,
+          "tasks": [
+            {
+              "id": "T-0004",
+              "status": "todo"
+            }
+          ]
+        },
+        {
+          "id": "DR-0007",
+          "title": "リリースの判定の条件を何にするか",
+          "wbs": "4.1",
+          "due": "2026-12-10",
+          "overdue": false,
+          "tasks": []
+        }
+      ],
+      "overdue": 0,
+      "recent": [
+        {
+          "id": "DR-0005",
+          "title": "記録の置き場を、表計算から小さなDBに移す",
+          "decided_at": "2026-11-17",
+          "decided_by": "オーナー"
+        },
+        {
+          "id": "DR-0004",
+          "title": "S1のレビュー：スプリントゴールを達成した",
+          "decided_at": "2026-11-13",
+          "decided_by": "オーナー"
+        },
+        {
+          "id": "DR-0003",
+          "title": "貸出は先着順とし、取り置きはしない",
+          "decided_at": "2026-11-06",
+          "decided_by": "オーナー"
+        },
+        {
+          "id": "DR-0002",
+          "title": "スプリントは2週間とし、最終日のレビューで、ゴールを達成したかを決定記録で確定する",
+          "decided_at": "2026-11-02",
+          "decided_by": "オーナー"
+        },
+        {
+          "id": "DR-0001",
+          "title": "最初のリリースは、貸出と返却の記録と一覧までとし、予約は扱わない",
+          "decided_at": "2026-11-02",
+          "decided_by": "オーナー"
+        }
+      ]
+    },
+    "ai": {
+      "recommended_decided": 3,
+      "followed": 2,
+      "not_followed": 1,
+      "followed_pct": 67
+    },
+    "deliverables": {
+      "items": [
+        {
+          "wbs": "1.1",
+          "title": "目的と範囲",
+          "status": "confirmed",
+          "decided": 1,
+          "total": 1,
+          "pct": 100
+        },
+        {
+          "wbs": "2.1",
+          "title": "要件",
+          "status": "partial",
+          "decided": 1,
+          "total": 2,
+          "pct": 50
+        },
+        {
+          "wbs": "3.1",
+          "title": "設計",
+          "status": "partial",
+          "decided": 1,
+          "total": 1,
+          "pct": 100
+        },
+        {
+          "wbs": "4.1",
+          "title": "リリース判定",
+          "status": "todo",
+          "decided": 0,
+          "total": 1,
+          "pct": 0
+        },
+        {
+          "wbs": "5.1",
+          "title": "進め方",
+          "status": "confirmed",
+          "decided": 2,
+          "total": 2,
+          "pct": 100
+        }
+      ],
+      "with_questions": 5,
+      "complete": 3
+    },
+    "tasks": {
+      "total": 4,
+      "todo": 1,
+      "doing": 1,
+      "done": 2,
+      "dropped": 0,
+      "active": [
+        {
+          "id": "T-0003",
+          "title": "小さなDBに記録を移す試作",
+          "dr": "DR-0005",
+          "status": "doing",
+          "ref": ""
+        },
+        {
+          "id": "T-0004",
+          "title": "延滞の通知の方法を調べる（メール、チャット）",
+          "dr": "DR-0006",
+          "status": "todo",
+          "ref": ""
+        }
+      ],
+      "stale": [],
+      "recent_done": [
+        {
+          "id": "T-0001",
+          "title": "貸出と返却の画面を作る",
+          "dr": "DR-0001",
+          "result": "貸出・返却・一覧の3画面ができた",
+          "result_ref": "commit 1a2b3c4"
+        },
+        {
+          "id": "T-0002",
+          "title": "先着順の一覧の表示を作る",
+          "dr": "DR-0003",
+          "result": "貸出中の備品と借りた人が一覧に出る",
+          "result_ref": "commit 5d6e7f8"
+        }
+      ]
+    },
+    "plan": {
+      "completion": {
+        "date": "2026-12-11",
+        "scope": "貸出と返却の記録、一覧、延滞の把握",
+        "source": "DR-0001"
+      },
+      "gates": [
+        {
+          "id": "R1",
+          "name": "リリース判定",
+          "date": "2026-12-11",
+          "condition": "リリース判定の条件（4.1）を満たす",
+          "status": "未",
+          "summary": ""
+        }
+      ],
+      "walls": {
+        "quality": "完成の定義：貸出の記録が失われない。画面の操作を1人以上が試した",
+        "delivery": "2026-12-11にリリース",
+        "cost": "追加の費用なし"
+      },
+      "capacity": {
+        "weekly_hours": 10,
+        "note": "有志2名の合計（架空）"
+      }
+    },
+    "sprints": {
+      "current": "S2",
+      "items": [
+        {
+          "id": "S1",
+          "goal": "貸出と返却を記録し、一覧で見られる",
+          "start": "2026-11-02",
+          "end": "2026-11-13",
+          "status": "達成",
+          "summary": "gates/S1.md",
+          "decided": 4,
+          "open": 0,
+          "overdue": 0,
+          "tasks_remaining": 0,
+          "tasks_done": 2
+        },
+        {
+          "id": "S2",
+          "goal": "データの置き場を移し、延滞が分かる",
+          "start": "2026-11-16",
+          "end": "2026-11-27",
+          "status": "未",
+          "summary": "",
+          "decided": 1,
+          "open": 1,
+          "overdue": 0,
+          "tasks_remaining": 2,
+          "tasks_done": 0
+        },
+        {
+          "id": "S3",
+          "goal": "リリースの準備",
+          "start": "2026-11-30",
+          "end": "2026-12-11",
+          "status": "未",
+          "summary": "",
+          "decided": 0,
+          "open": 1,
+          "overdue": 0,
+          "tasks_remaining": 0,
+          "tasks_done": 0
+        }
+      ],
+      "current_detail": {
+        "decided": 1,
+        "open": 1,
+        "overdue": 0,
+        "tasks_remaining": 2,
+        "tasks_done": 0,
+        "decided_list": [
+          {
+            "id": "DR-0005",
+            "title": "記録の置き場を、表計算から小さなDBに移す",
+            "decided_at": "2026-11-17",
+            "decided_by": "オーナー"
+          }
+        ],
+        "open_list": [
+          {
+            "id": "DR-0006",
+            "title": "延滞を、借りた人にどう知らせるか",
+            "due": "2026-11-25",
+            "overdue": false
+          }
+        ],
+        "tasks": [
+          {
+            "id": "T-0003",
+            "title": "小さなDBに記録を移す試作",
+            "dr": "DR-0005",
+            "status": "doing",
+            "result": ""
+          },
+          {
+            "id": "T-0004",
+            "title": "延滞の通知の方法を調べる（メール、チャット）",
+            "dr": "DR-0006",
+            "status": "todo",
+            "result": ""
+          }
+        ]
+      },
+      "unassigned_decisions": 0
+    }
+  },
+  "judgments": {
+    "summary": {
+      "rating": "caution",
+      "text": "S2の途中です。S1はゴールを達成しました（DR-0004）。決定は**7件のうち5件が確定**しています。このスプリントで確定した決定が1件（記録の置き場、DR-0005）、このスプリントの未決の問いが1件（延滞の知らせ方、DR-0006）で、期限は11/25です。このスプリントの残りのタスクが2件あり、T-0004 はまだ未着手です。",
+      "meta": {
+        "assessed_by": "Claude",
+        "assessed_at": "2026-11-19",
+        "based_on": {
+          "decisions_index": "e95c1cfb2d02",
+          "tasks": "9b471336004d",
+          "wbs": "ce9d08013cda",
+          "plan": "1a2d8dcb723c"
+        },
+        "confirmed_by": "オーナー",
+        "confirmed_at": "2026-11-19"
+      }
+    },
+    "quality": {
+      "rating": "caution",
+      "text": "S1で、表計算に同時に書くと記録が消えることが分かり、完成の定義に反していました。DR-0005 で置き場を移すことにし、T-0003 で試作しています。",
+      "meta": {
+        "assessed_by": "Claude",
+        "assessed_at": "2026-11-19",
+        "based_on": {
+          "decisions_index": "e95c1cfb2d02",
+          "tasks": "9b471336004d",
+          "wbs": "ce9d08013cda",
+          "plan": "1a2d8dcb723c"
+        },
+        "confirmed_by": "オーナー",
+        "confirmed_at": "2026-11-19"
+      }
+    },
+    "delivery": {
+      "rating": "ok",
+      "text": "S1はゴールを達成しました。リリースは12/11の予定です。リリースの判定の条件（DR-0007）は、S3の期限で決めます。",
+      "meta": {
+        "assessed_by": "Claude",
+        "assessed_at": "2026-11-19",
+        "based_on": {
+          "decisions_index": "e95c1cfb2d02",
+          "tasks": "9b471336004d",
+          "wbs": "ce9d08013cda",
+          "plan": "1a2d8dcb723c"
+        },
+        "confirmed_by": "",
+        "confirmed_at": ""
+      }
+    },
+    "cost": {
+      "rating": "ok",
+      "text": "追加の費用なしの壁に収まっています。小さなDBは、追加の費用が要らないものを選びました（DR-0005）。",
+      "meta": {
+        "assessed_by": "Claude",
+        "assessed_at": "2026-11-19",
+        "based_on": {
+          "decisions_index": "e95c1cfb2d02",
+          "tasks": "9b471336004d",
+          "wbs": "ce9d08013cda",
+          "plan": "1a2d8dcb723c"
+        },
+        "confirmed_by": "",
+        "confirmed_at": ""
+      }
+    },
+    "risks": {
+      "items": [
+        "延滞の知らせ方（DR-0006）が11/25までに決まらないと、S2のゴール（延滞が分かる）を満たせない。",
+        "DBへの移行（T-0003）で、S1の記録を移し損ねると、完成の定義に反する。"
+      ],
+      "meta": {
+        "assessed_by": "Claude",
+        "assessed_at": "2026-11-19",
+        "based_on": {
+          "decisions_index": "e95c1cfb2d02",
+          "tasks": "9b471336004d",
+          "wbs": "ce9d08013cda",
+          "plan": "1a2d8dcb723c"
+        },
+        "confirmed_by": "",
+        "confirmed_at": ""
+      }
+    }
+  }
+}
