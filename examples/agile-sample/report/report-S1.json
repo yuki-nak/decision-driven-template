@@ -5,7 +5,8 @@
     "decisions_index": "e95c1cfb2d02",
     "tasks": "9b471336004d",
     "wbs": "ce9d08013cda",
-    "plan": "1a2d8dcb723c"
+    "plan": "1244ab8d45d9",
+    "costs": "2c9a89d774ba"
   },
   "derived": {
     "as_of": "2026-11-19",
@@ -190,6 +191,30 @@
         "weekly_hours": 10,
         "note": "有志2名の合計（架空）"
       }
+    },
+    "costs": {
+      "recorded": true,
+      "limit": {
+        "per": "total",
+        "amount": 0,
+        "kind": ""
+      },
+      "total": 0,
+      "by_kind": {
+        "capex": 0,
+        "opex": 0
+      },
+      "by_month": [
+        {
+          "month": "2026-11",
+          "total": 0
+        }
+      ],
+      "latest_month": "2026-11",
+      "latest_month_total": 0,
+      "used_pct": null,
+      "over": false,
+      "over_months": []
     },
     "sprints": {
       "current": "S1",

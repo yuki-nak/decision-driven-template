@@ -228,6 +228,21 @@
         "weekly_hours": 6,
         "note": "有志2名の合計（架空）"
       }
+    },
+    "costs": {
+      "recorded": false,
+      "limit": null,
+      "total": 0,
+      "by_kind": {
+        "capex": 0,
+        "opex": 0
+      },
+      "by_month": [],
+      "latest_month": "",
+      "latest_month_total": 0,
+      "used_pct": null,
+      "over": false,
+      "over_months": []
     }
   },
   "judgments": {

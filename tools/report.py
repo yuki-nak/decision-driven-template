@@ -19,9 +19,13 @@
 その節とスプリントの一覧を足す。決定は日付（確定は decided_at、未決は due）で、
 タスクは tasks.csv の sprint 列で、スプリントに属する。sprints がなければ、出力は従来と同じ。
 
+費用：costs.csv（外部の仕組みの月ごとの合計）と plan.json の cost_limit から、合計、最新の月、
+上限に対する割合を導出する。記録がない、または上限がなければ「未記録」として扱う。
+
 検査（通らなければ書かない。終了コード1）:
   判断の欄の形（評価の値、文字数）、文章中の数字が導出値か計画の値にあること、
-  文章中の DR-NNNN・T-NNNN が存在すること。
+  文章中の DR-NNNN・T-NNNN が存在すること、
+  費用の記録か上限がない、または上限を超えているのに、費用の評価が ok でないこと。
   （警告）判断の欄の based_on が現在の入力と違う：入力が更新されたので、再評価が要る。
 """
 import argparse
@@ -32,7 +36,8 @@ import re
 import sys
 
 from common import (DECISION_COLUMNS, DEFAULT_ROOT, InputError, TASK_COLUMNS, TASK_STATUS, WBS_COLUMNS,
-                    decision_sprint, file_id, read_csv, read_json, sprint_at, sprints_of, wbs_key)
+                    cost_limit, decision_sprint, file_id, read_costs, read_csv, read_json, sprint_at,
+                    sprints_of, wbs_key)
 
 SCHEMA_VERSION = "1.0.0"
 INPUTS = {
@@ -41,6 +46,7 @@ INPUTS = {
     "wbs": "wbs.csv",
     "plan": "plan.json",
 }
+OPTIONAL_INPUTS = {"costs": "costs.csv"}  # あれば入力の識別子に加える
 RATINGS = ("ok", "caution", "bad")
 JUDGMENT_FIELDS = {"summary": 400, "quality": 200, "delivery": 200, "cost": 200}
 RISK_MAX = 120
@@ -53,7 +59,9 @@ def pct(n, d):
 
 
 def input_ids(root):
-    return {k: file_id(root / v) for k, v in INPUTS.items()}
+    ids = {k: file_id(root / v) for k, v in INPUTS.items()}
+    ids.update({k: file_id(root / v) for k, v in OPTIONAL_INPUTS.items() if (root / v).exists()})
+    return ids
 
 
 def derive(root, sprint=None):
@@ -114,11 +122,36 @@ def derive(root, sprint=None):
                            for g in plan.get("gates", [])],
                  "walls": plan.get("walls", {}), "capacity": plan.get("capacity", {})},
     }
+    out["costs"] = derive_costs(read_costs(root), cost_limit(plan))
     sprints = sprints_of(plan)
-    if sprints:  # スプリントがなければ、出力は従来と同じ
+    if sprints:  # スプリントがなければ、スプリントの節は出さない
         out["sprints"] = derive_sprints(root, sprints, decisions, tasks, as_of, sprint)
     elif sprint:
         raise InputError("plan.json にスプリントがない")
+    return out
+
+
+def derive_costs(rows, limit):
+    """費用の実績（月ごとの合計）と上限から導出する。明細は外部の仕組みにある。"""
+    rows = [r for r in rows or [] if r["amount"].isdigit()]
+    by_kind = {k: sum(int(r["amount"]) for r in rows if r["kind"] == k) for k in ("capex", "opex")}
+    # 上限に kind があれば、その種類だけを上限と比べる
+    scoped = [r for r in rows if not (limit and limit["kind"]) or r["kind"] == limit["kind"]]
+    months = sorted({r["month"] for r in scoped})
+    by_month = [{"month": m, "total": sum(int(r["amount"]) for r in scoped if r["month"] == m)} for m in months]
+    total = sum(x["total"] for x in by_month)
+    latest = by_month[-1] if by_month else None
+    out = {"recorded": bool(rows), "limit": limit, "total": total, "by_kind": by_kind, "by_month": by_month,
+           "latest_month": latest["month"] if latest else "", "latest_month_total": latest["total"] if latest else 0,
+           "used_pct": None, "over": False, "over_months": []}
+    if limit and scoped:
+        if limit["per"] == "month":
+            out["over_months"] = [x["month"] for x in by_month if x["total"] > limit["amount"]]
+            out["over"] = bool(out["over_months"])
+            out["used_pct"] = pct(latest["total"], limit["amount"])
+        else:
+            out["over"] = total > limit["amount"]
+            out["used_pct"] = pct(total, limit["amount"])
     return out
 
 
@@ -177,7 +210,7 @@ def numbers_in(obj, acc):
     if isinstance(obj, (int, float)):
         acc.add(str(int(obj)) if float(obj).is_integer() else str(obj))
     elif isinstance(obj, str):
-        for m in re.findall(r"\d+(?:\.\d+)?", ID_RE.sub("", obj)):
+        for m in re.findall(r"\d+(?:\.\d+)?", re.sub(r"(?<=\d),(?=\d{3}(?!\d))", "", ID_RE.sub("", obj))):
             acc.add(str(int(float(m))) if float(m).is_integer() else m)
     elif isinstance(obj, dict):
         for v in obj.values():
@@ -228,11 +261,18 @@ def check_judgments(j, derived, current_ids, known_ids):
 
     allowed = numbers_in(derived, set())
     ids = set(known_ids)
+    c = derived.get("costs") or {}
+    if (j.get("cost") or {}).get("rating") == "ok":
+        if not (c.get("recorded") and c.get("limit")):
+            errors.append("cost.rating: 費用の記録（costs.csv）か上限（plan.json の cost_limit）がないので、ok にできない"
+                          "（caution にし、未記録であることを書く）")
+        elif c.get("over"):
+            errors.append("cost.rating: 費用が上限を超えているので、ok にできない")
     for where, text in judgment_texts(j):
         for ref in re.findall(r"\b(?:DR|T)-\d{4}\b", text):
             if ref not in ids:
                 errors.append(f"{where}: {ref} が存在しない")
-        plain = text.replace("**", "")
+        plain = re.sub(r"(?<=\d),(?=\d{3}(?!\d))", "", text.replace("**", ""))  # 桁区切り（4,200）を外す
         for pattern, expected in phrase_rules(derived):  # 照合した言い回しは消し、下の検査に回さない
             for m in re.finditer(pattern, plain):
                 got = tuple(int(g) for g in m.groups())
@@ -370,6 +410,30 @@ def sprint_cards(sp, as_of):
     return "\n".join(out)
 
 
+def yen(n):
+    return f"{n:,}"
+
+
+def cost_line(c):
+    """費用の実績の1行。数字は導出値。"""
+    if not c:
+        return ""
+    lim = c["limit"]
+    kind_label = {"capex": "Capex", "opex": "Opex", "": ""}
+    lim_text = "上限：未設定" if not lim else \
+        f'上限：{kind_label[lim["kind"]] + " " if lim["kind"] else ""}{"月" if lim["per"] == "month" else "総額"} {yen(lim["amount"])}'
+    if not c["recorded"]:
+        return f'<div class="muted"><span class="caution">実績：未記録</span>（costs.csv）・ {esc(lim_text)}</div>'
+    used = "" if c["used_pct"] is None else \
+        f'（{"最新の月" if lim and lim["per"] == "month" else "合計"}は上限の {c["used_pct"]}%）'
+    over = f'<span class="bad"> 上限を超えた月：{esc("、".join(c["over_months"]))}</span>' if c["over_months"] else \
+        ('<span class="bad"> 上限を超えている</span>' if c["over"] else "")
+    scope = f'{kind_label[lim["kind"]]}の' if lim and lim["kind"] else ""
+    split = f'（Capex {yen(c["by_kind"]["capex"])}、Opex {yen(c["by_kind"]["opex"])}）'
+    return (f'<div class="muted">実績：{esc(scope)}合計 {yen(c["total"])}、最新の月 {esc(c["latest_month"])} は '
+            f'{yen(c["latest_month_total"])} ・ すべての種類 {esc(split)} ・ {esc(lim_text)}{esc(used)}{over}</div>')
+
+
 def render(report):
     d, j, cur = report["derived"], report["judgments"], report["inputs"]
     dec, ai, dl, tk, plan = d["decisions"], d["ai"], d["deliverables"], d["tasks"], d["plan"]
@@ -404,8 +468,9 @@ def render(report):
                    f'<th>通過の条件</th><th>状態</th><th>まとめ</th></tr>{rows}</table></div>')
 
     walls = plan["walls"]
+    extra = {"cost": cost_line(d.get("costs"))}
     qcd = "".join(f'<tr><th style="width:5em">{label}</th><td><div class="muted">壁：{esc(walls.get(key, "未定"))}</div>'
-                  f'{judgment_block(j.get(key), cur)}</td></tr>'
+                  f'{extra.get(key, "")}{judgment_block(j.get(key), cur)}</td></tr>'
                   for key, label in (("quality", "品質"), ("delivery", "納期"), ("cost", "費用")))
     out.append(f'<div class="card"><h2>QCD（壁と評価）</h2><table>{qcd}</table></div>')
 
